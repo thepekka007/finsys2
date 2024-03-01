@@ -1,0 +1,1378 @@
+<!-- CREATED BY TINTO MT -->
+
+{% extends 'company/Fin_base.html' %}
+{% block body %}
+{% load static %}
+<link href="{% static 'assets/fontawesome/css/fontawesome.css' %}" rel="stylesheet">
+<link href="{% static 'assets/fontawesome/css/brands.css' %}" rel="stylesheet">
+<link href="{% static 'assets/fontawesome/css/solid.css' %}" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+<!-- Include Bootstrap CSS and JS -->
+<!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"> -->
+<!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script> -->
+
+<style>         /* SEARCH STYLE */
+    /* Style the Select2 search input */
+    .select2-search__field {
+      width: 100%; /* Set the width as needed */
+      padding: 8px; /* Adjust padding as needed */
+      border: 1px solid #92acc6; /* Add border color */
+      border-radius: 4px; /* Add border-radius for rounded corners */
+      outline: none; /* Remove the outline */
+      color: #000;
+    }
+  /*   
+    .select2-container .select2-selection--single{box-sizing:border-box;cursor:pointer;display:block;height:35px;user-select:none;color: black;
+      -webkit-user-select:none;background-color: #fff;} */
+  .select2-container .select2-selection--single .select2-selection__rendered{border: 1px solid white; border-radius: 6px; display:block;padding-left:20px;padding-right:20px; height: 35px;color: rgb(252, 252, 252);background-color: #2f516f;border-radius: 2px;box-shadow: #fcfcfc;border-color: #f2e8e8;}
+      .select2-dropdown{background-color:#2f516f;color: rgb(253, 253, 253);position:absolute;left:-100000px;width:100%;z-index:1051;color: rgb(255, 255, 255);border-color: #f2e8e8;}
+      .select2-results{display:block;border: #ced4da;border-color: #f2e8e8;}
+      .select2-results__options{list-style:none;margin:0;padding:0;color: rgb(255, 255, 255);background-color: #2f516f;padding-left: 20px;border-color: #f2e8e8;} 
+      .select2-results__option[aria-selected]{cursor:pointer;color: rgb(251, 251, 251);background-color: #2f516f;border-color: #f2e8e8;}
+      .select2-container--open .select2-dropdown{left:0;color: rgb(255, 255, 255);background-color: #2f516f;border-color: #f2e8e8;}
+  
+      .select2-hidden-accessible{background-color: #2f516f;border:2px !important;clip:rect(0 0 0 0) !important;-webkit-clip-path:inset(50%) !important;clip-path:inset(50%) !important;height:0px !important;padding:0 !important;position:absolute !important;width:1px !important;white-space:nowrap !important;color: rgb(250, 250, 250)} 
+      /* .select2-container--default .select2-selection--single{background-color:#000000;border:1px solid #000000;border-radius:4px;color: rgb(0, 0, 0);background-color: #ede4e4;} */
+  /* .select2-hidden-accessible{background-color: #fff;border:0 !important;clip:rect(0 0 0 0) !important;-webkit-clip-path:inset(50%) !important;clip-path:inset(50%) !important;height:1px !important;overflow:hidden !important;padding:0 !important;position:absolute !important;width:1px !important;white-space:nowrap !important;color: black}  */
+  .select2-container--default .select2-selection--single:focus, .select2-container--default .select2-selection--single .select2-search__field:focus, .typeahead:focus, .tt-query:focus, .tt-hint:focus {
+      border: 1px solid rgba(250, 250, 250, 0.5);
+      background-color: #d3bcbc;
+  }
+  </style>
+
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<div class="page-content ">
+    <a href="">
+        <i class="fa fa-times-circle text-white" style="font-size: 1.2rem;margin-left: 100%;"></i></a>
+    <div class="card radius-15">
+     
+        <div class=" card-body">
+            <form action="" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+      
+            <center> <h2>New Delivery Challan </h2></center><br><br><br>
+                <div class="row" style="margin-left: 120px; margin-right: 120px;">
+                    <div class="col">
+                        <tr>
+                            <div class="form-group">
+                                <td>
+                                    <label>Customer</label>
+                                </td>
+                                <td style=" position: relative;">
+                                    <div style="display: flex;">
+                                        <select  class="form-control" name="customer" id="customer3" style="width: 93%;">
+                                            <option value="0">Select Customer</option>
+                            {% for cust in customers %}
+                            <option value="{{ cust.id }}"> {{ cust.title }} {{ cust.first_name }} {{ cust.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                        
+                                        <button data-toggle="modal" data-target="#newCustomer" class="btn btn-outline-secondary text-grey mb-2 ml-1">+</button>   
+                                   
+                                    </div>
+                               
+                                    <script>
+                                        // $(document).ready(function() {
+                                        //   // Initialize select2
+                                        //   $('#customer3').select2();
+                                      
+                                          // Handle change event for the 'selected' element
+                                          $(document).on('change', '#customer3', function () {
+                                            console.log('h')
+                                            var customer = $('#customer3').val();
+                                            $.ajax({
+                                              type: "GET",
+                                              url: "{% url 'customerdata' %}",
+                                              data: {
+                                                id: customer
+                                                
+                                              },
+                                              
+                                              success: function (response) {
+                                                console.log('j')
+                                                // console.log(response.email)
+                                                dataemail = response.email;
+                                                billing_street = response.billing_street;
+                                                billing_city = response.billing_city;
+                                                billing_street = response.billing_street;
+                                                billing_state = response.billing_state;
+                                                gst_type = response.gst_type;
+                                                gstin = response.gstin;
+                                                place_of_supply = response.place_of_supply;
+                                               console.log(dataemail)
+                                              
+                                                if (dataemail !== 'null' && dataemail.trim() !== '') 
+                                                        {
+                                                         
+                                                            $("#empemailid").val(dataemail);
+                                                        } 
+                                                    
+                                                if (salary !== 'null' ) 
+                                                        {
+                                                           
+                                                            $("#salaryid").val(salary);
+                                                        } 
+                                                if (jdate !== 'null' ) 
+                                                        {
+                                                           
+                                                            $("#JoiningDate").val(jdate);
+                                                        } 
+                                                if (empid !== 'null' ) 
+                                                        {
+                                                           
+                                                            $("#empiid").val(empid);
+                                                        } 
+                                                    }
+                                                    
+                                                    
+                                                    
+                                             
+                                            });
+                                          });
+                                        // });
+                                      </script>
+                                    
+                                </td>
+                            </div>
+                        </tr>
+
+                   
+                        <tr >
+                            <div class="form-group" >
+                                    <td><Label>Employee ID</Label></td>
+                                    <td><input placeholder="Employee id" required name="empid" id="empiid" type="text" class="form-control"></td>
+                            </div>
+                        </tr>
+                    </div>
+                    <div class="col">
+                        <tr>
+                            
+                            <div class="form-group" >
+                                <td><Label>Employee Email</Label></td>
+                                   <td><input placeholder="Employee Email" required name="empemail" id="empemailid" type="email" class="form-control"></td>
+                            </div>
+                        </tr>
+                        <tr >
+                            <div class="form-group" >
+                                <td><Label>Salary</Label></td>
+                                <td><input placeholder="Employee Salary" required name="salary" id="salaryid" type="number" class="form-control"></td>
+                        </div>
+                        
+                        </tr>
+                    </div>
+                </div>
+                <div class="row" style="margin-left: 120px; margin-right: 120px;">
+                    <div class="col">
+                        <tr>
+                             <div class="form-group" > 
+                                <td><Label>Joining Date</Label></td>
+                                <td>
+                                    <td><input placeholder="Joining Date" required name="Joining_Date" id="JoiningDate" type="date" class="form-control"></td>
+                              
+                                </td>
+                            </div>
+                        </tr>
+
+                   
+                        <tr >
+                            <div class="form-group" >
+                                    <td><Label>Loan Date</Label></td>
+                                    <td><input placeholder="loan Date" required name="loan_date1" id="loan_date" type="date" class="form-control"></td>
+                            </div>
+                        </tr>
+                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                          // Get the current date in the format "YYYY-MM-DD"
+                          var currentDate = new Date().toISOString().split('T')[0];
+                      
+                          // Set the value of the date input to the current date
+                          document.getElementById('loan_date').value = currentDate;
+                        });
+                      </script>
+                    <div class="col">
+                        <tr>
+                            
+                            <div class="form-group" >
+                                <td><Label>Loan Amount</Label></td>
+                                   <td><input placeholder="Enter Loan Amount" required name="loan_amount" id="loan_amount" type="number" class="form-control"></td>
+                            </div>
+                        </tr>
+                        <tr >
+                            <div class="form-group">
+                                <td>
+                                    <label> Loan Duration</label>
+                                </td>
+                                <td style=" position: relative;">
+                                    <div style="display: flex;">
+                                        
+                                        <select  class="form-control" name="loanduration" id="loanduration" onchange="calculateExpiryDate2()" style="width: 93%;">
+                                            <!-- <option value="1 YEAR">1 YEAR</option>
+                                            <option value="6 MONTHS">6 MONTHS                                    </option>
+                                            <option value="3 MONTHS">3 MONTHS</option> -->
+                                            {% for i in term %}
+                                            <option value={{i.id}}>{{i.duration}} &nbsp;{{i.term}}</option>
+                                            {% endfor %}
+                                    </select>    
+                                        <button data-toggle="modal" data-target="#loamodal" class="btn btn-outline-secondary text-grey mb-2 ml-1">+</button>   
+                                    
+                                    </div>
+                               
+                                    <script>
+                                        $(document).ready(function() {
+                                            // Initialize select2
+                                            $('#loanduration').select2();
+                                        })
+                                        function calculateExpiryDate2() {
+    var customer = $('#loanduration').val();
+    const joinDate = new Date(document.getElementById("loan_date").value);
+
+    $.ajax({
+        type: "GET",
+        url: "",
+        data: {
+            id: customer
+        },
+        success: function (response) {
+            // Assuming response.days is a valid number
+            var days = response.days;
+
+            console.log(days);
+
+            // Calculate the expiry date by adding days to the joinDate
+            var expiryDate = new Date(joinDate.getTime() + days * 24 * 60 * 60 * 1000);
+
+            // Format the expiryDate to ISO format (yyyy-mm-dd)
+            var formattedExpiryDate = expiryDate.toISOString().split('T')[0];
+
+            // Display the formatted expiry date in the expdateid field
+            $("#expdateid").val(formattedExpiryDate);
+        },
+        error: function (error) {
+            console.error("Error fetching term data:", error);
+        }
+    });
+}
+
+
+                                    </script>
+                                    
+                                </td>
+                            </div>
+                        
+                        </tr>
+                    </div>
+                </div>
+                <div class="row" style="margin-left: 120px; margin-right: 120px;">
+                    <div class="col">
+                        <tr>
+                             <div class="form-group" > 
+                                <td><Label>Expiry Date</Label></td>
+                                <td>
+                                    <td><input placeholder="expdate" required name="expdate" id="expdateid" type="date" value="{{loan.expiry_date}}" class="form-control"></td>
+                              
+                                </td>
+                            </div>
+                        </tr>
+
+                   
+                        <tr > 
+                            <div class="form-group" >
+                                    <td><Label>Payment Type </Label></td>
+                                    <td>  <select name="select_payment" id="select_payment" onclick="show_fields()"  class="form-control "  >
+                                        <option value="no_option" style="background-color: #294f76;">select</option>
+                                        <option value="Cash" style="background-color: #294f76;">Cash</option>
+                                        <option value="Cheque" style="background-color: #294f76;">Cheque</option>
+                                        <option value="UPI" style="background-color: #294f76;">UPI</option>
+                                     {% for i in banks %}
+    <option value="{{ i.id }}" style="background-color: #294f76;">
+        {{ i.bank_name }} ( ********  {{ "*"|stringformat:"<"|rjust:12 }}{{ i.account_number|slice:"-4:" }})
+    </option>
+{% endfor %}
+
+                                    </select> </td>
+                            </div>
+                        </tr>
+                    </div>
+                    <script>
+               
+                    
+
+
+                    </script>
+                    <div class="col">
+                        <tr>
+                            
+                            <div class="form-group" >
+                         </div>
+                        </tr>
+                        <tr >
+                            <div class="form-group"  >
+                       
+                        </div>
+                        <br><br>    <br>
+                            <div class="form-group" > 
+                                <td><Label id="cheque_no_label" style="display: none;">Cheque Number</Label></td>
+                                <td>
+                                    <td><input placeholder="Cheque Number"  style="display: none;" name="cheque_no" id="cheque_no" type="text" class="form-control"></td>
+                              
+                                </td>
+                            </div>
+                            <div class="form-group" > 
+                                <td><Label id="upi_id_label" style="display: none;">UPI ID</Label></td>
+                                <td>
+                                    <td><input placeholder=" upi_id_label"  style="display: none;" name="upi_id" id="upi_id" type="text" class="form-control"></td>
+                              
+                                </td>
+                            </div>
+                            <div class="form-group" > 
+                                <td><Label id="acc_no_label" style="display: none;">Ac/Number</Label></td>
+                                <td>
+
+                                    <td><input placeholder=" upi_id_label"  style="display: none;" name="acc_no" id="acc_no" type="text" class="form-control"></td>
+                              
+                                </td>
+                            </div>
+                        </tr>
+                    </div>
+                </div>
+
+          
+
+      
+                <br>  
+                <div class="row" style="margin-left: 140px; margin-right: 120px;">
+                    <div class="col">
+                        <tr>
+                            <div class="row ">   
+                        
+                                    <label><b>Monthly Cutting :</b></label>&nbsp;&nbsp;
+                                    
+                                    <div class="form-check form-check-inline ml-3" >
+                                        <input class="form-check-input" type="radio" id="no" name="cutingamount"
+                                        onchange="toggleDivVisibility(this.value)" value="No" >
+                                        <label class="form-check-label">In Percentage</label>
+                                        
+                                    </div>
+                                    <div class="form-check form-check-inline ml-3">
+                                     
+                                            <input class="form-check-input" type="radio" id="yes" name="cutingamount"
+                                            onchange="toggleDivVisibility(this.value)" value="Yes" required>
+                                        <label class="form-check-label"> In Amount</label>
+                                    </div>
+                                <!-- </div> -->
+                                <script>
+                                    function toggleDivVisibility(value) {
+                                        var cuttingPercentageDiv = document.getElementById('cuttingPercentage');
+                                        var CutingamountDiv = document.getElementById('Cutingamount');
+                                
+                                        cuttingPercentageDiv.style.display = value === 'No' ? 'block' : 'none';
+                                        CutingamountDiv.style.display = value === 'Yes' ? 'block' : 'none';
+                                    }
+                                </script>
+                                
+                            </div>
+                    
+                                    <div class="desc m-4 " id="cuttingPercentage" style="display: none;">
+                                        <div class="card-title mt-3">
+                                            <h5 class="mb-0">Monthly Cutting in Percentage</h5>
+                                        </div>
+                                        <hr>
+                                        <div class="row mt-4">
+                                            <div class="col-3 col-md-8 ">
+                                                <label class="col-form-label">Monthly Cutting(%)</label>
+                                                <br>
+                                                <br>
+                                                <input type="number" oninput="convert()" class="form-control" id="per" name="cuttingPercentage"
+                                                 placeholder="In Percentage"style="background-color: #2f516f; color: white;" min="0" value="0" >
+                                            </div>     
+                                            <div class="col-5 col-md-8 ">
+                                                
+                                                <label class="col-form-label">Amount</label>
+                                                <BR>
+                                                    <br>
+                                                <input type="number"  class="form-control" id="cp" name="pamount"
+                                                    placeholder="amount"style="background-color: #2f516f; color: white;"  min="0" readonly >    
+                                                
+                                  
+                                                
+                                                <div id="messag"></div>
+        
+                                            </div>
+                                        </div>        
+                                    </div>
+                   
+                                <div class="desc m-4 ml-5 pt-4" id="Cutingamount" style="display: none;">
+                                    <div class="card-title mt-3">
+                                        <h5 class="mb-0">Monthly Cutting in Amount</h5>
+                                    </div>
+                                    <hr>
+                                    <div class="row mt-3">
+                                        <div class="col-3 col-md-4">
+                                            <label class="col-form-label">Monthly Cutting (INR)</label>
+            
+                                            <input type="number" oninput="validatecutamount()" class="form-control" id="amount" name="amount5"
+                                                placeholder="In Amount" style="background-color: #2f516f; color: white; " ><br>
+                                            <div class="text-danger m-2" id="effectivefrom"></div>
+                                            <div id="message"></div>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                               
+                            </div>    
+                        </tr>     
+
+                        <div class="col">
+                            <tr>
+                                <div class="form-group">
+                                    <td>
+                           
+                                        
+                                    </td>
+                                </div>
+                            </tr>
+                            </div>
+                            </div>
+                            <br>  
+                        <div class="col" style="margin-left: 120px; margin-right: 20%;width: 50%;">
+
+                            <tr>
+                                <div class="form-group">
+                                    <td>
+                                        <label>Note</label>
+                                    </td>
+                                    <td style=" position: relative;">
+                                        <div style="display: flex;">
+                                        
+                                   </div>
+                                   
+                                   <textarea class="form-control" id="" name="Note" placeholder="Note"
+                                   style="height: 190px;"></textarea>
+                               <input type="file" name="file" style="margin-top: 10px; width: 70%;">
+                                        
+                                    </td>
+                                </div>
+                            </tr>
+    </div>
+                       <br>
+    <div class="col-md-3 mt-3" style="margin-left: 35%; margin-right: 20%;">
+        <center><button type="submit" class="btn btn-outline-info rounded-pill  text-grey " style="width: 60%;">
+            Submit
+        </button></center>
+    </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- emp detais -->
+<script>
+    $(document).ready(function() {
+      // Initialize select2
+      $('#employeeid').select2();
+  
+      // Handle change event for the 'selected' element
+      $(document).on('change', '#employeeid', function () {
+        var customer = $('#employeeid').val();
+        $.ajax({
+          type: "GET",
+          url: "",
+          data: {
+            id: customer
+          },
+          success: function (response) {
+            // console.log(response.email)
+            dataemail = response.email;
+            salary = response.salary;
+            jdate = response.jdate;
+            empid = response.empid;
+           console.log(salary)
+          
+            if (dataemail !== 'null' && dataemail.trim() !== '') 
+                    {
+                     
+                        $("#empemailid").val(dataemail);
+                    } 
+                
+            if (salary !== 'null' ) 
+                    {
+                       
+                        $("#salaryid").val(salary);
+                    } 
+            if (jdate !== 'null' ) 
+                    {
+                       
+                        $("#JoiningDate").val(jdate);
+                    } 
+            if (empid !== 'null' ) 
+                    {
+                       
+                        $("#empiid").val(empid);
+                    } 
+                }
+                
+                
+                
+         
+        });
+      });
+    });
+  </script>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js" defer ></script>
+
+  
+<!-- New Customer Modal -->
+
+<div class="modal fade" id="newCustomer">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" style="background-color: #213b52;">
+            <div class="modal-header">
+                <h5 class="m-3">New Customer</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card p-3">
+                    <form method="post" id="newCustomerForm">
+                        {% csrf_token %}
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <label for="title">Title</label>
+                                <select name="title" id="title" class="form-control">
+                                    <option value="Mr">Mr</option>
+                                    <option value="Mrs">Mrs</option>
+                                    <option value="Miss">Miss</option>
+                                    <option value="Ms">Ms</option>
+                                </select>
+                                <div class="valid-feedback">Looks good!</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="firstName">First Name*</label>
+                                <input type="text" class="form-control" id="firstName" name="first_name" required style="background-color: #43596c;color: white;">
+                                <div class="valid-feedback">Looks good!</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="lastName">Last Name*</label>
+                                <input type="text" class="form-control" id="lastName" name="last_name" required style="background-color: #43596c;color: white;">
+                                <div class="valid-feedback">Looks good!</div>
+                            </div>
+                        </div>
+    
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <label for="companyName">Company</label>
+                                <input type="text" class="form-control" id="companyName" name="company_name" style="background-color: #43596c;color: white;">
+                                <div class="valid-feedback">Looks good!</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="location">Location</label>
+                                <input type="text" class="form-control" id="location" name="location" style="background-color: #43596c;color: white;">
+                                <div class="valid-feedback">Looks good!</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="custPlaceOfSupply">Place of Supply*</label>
+                                <select class="custom-select form-control" id="custPlaceOfSupply" name="place_of_supply" style="background-color: #43596c; color: white;" required>
+                                    <option selected value="">Select Place of Supply</option>
+                                    <option value="Andaman and Nicobar Islads">Andaman and Nicobar Islands</option>
+                                    <option value="Andhra Predhesh">Andhra Predhesh</option>
+                                    <option value="Arunachal Predesh">Arunachal Predesh</option>
+                                    <option value="Assam">Assam</option>
+                                    <option value="Bihar">Bihar</option>
+                                    <option value="Chandigarh">Chandigarh</option>
+                                    <option value="Chhattisgarh">Chhattisgarh</option>
+                                    <option value="Dadra and Nagar Haveli">Dadra and Nagar Haveli</option>
+                                    <option value="Damn anad Diu">Damn anad Diu</option>
+                                    <option value="Delhi">Delhi</option>
+                                    <option value="Goa">Goa</option>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Haryana">Haryana</option>
+                                    <option value="Himachal Predesh">Himachal Predesh</option>
+                                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                    <option value="Jharkhand">Jharkhand</option>
+                                    <option value="Karnataka">Karnataka</option>
+                                    <option value="Kerala">Kerala</option>
+                                    <option value="Ladakh">Ladakh</option>
+                                    <option value="Lakshadweep">Lakshadweep</option>
+                                    <option value="Madhya Predesh">Madhya Predesh</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Manipur">Manipur</option>
+                                    <option value="Meghalaya">Meghalaya</option>
+                                    <option value="Mizoram">Mizoram</option>
+                                    <option value="Nagaland">Nagaland</option>
+                                    <option value="Odisha">Odisha</option>
+                                    <option value="Puducherry">Puducherry</option>
+                                    <option value="Punjab">Punjab</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                    <option value="Sikkim">Sikkim</option>
+                                    <option value="Tamil Nadu">Tamil Nadu</option>
+                                    <option value="Telangana">Telangana</option>
+                                    <option value="Tripura">Tripura</option>
+                                    <option value="Uttar Predesh">Uttar Predesh</option>
+                                    <option value="Uttarakhand">Uttarakhand</option>
+                                    <option value="West Bengal">West Bengal</option>
+                                    <option value="Other Territory">Other Territory</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a valid registration type.</div>
+                            </div>
+                        </div>
+    
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <label for="gstType">GST Type*</label>
+                                <select class="form-control" id="custGstType" name="gst_type" style="background-color: #43596c; color: white;" required>
+                                    <option selected value="">Select GST Type</option>
+                                    <option value="Registered Business - Regular">Registered Business - Regular <span><i>(Business that is registered under gst)</i></span></option>
+                                    <option value="Registered Business - Composition">Registered Business - Composition (Business that is registered under composition scheme in gst)</option>
+                                    <option value="Unregistered Business">Unregistered Business (Business that has not been registered under gst)</option>
+                                    <option value="Overseas">Overseas (Import/Export of supply outside india)</option>
+                                    <option value="Consumer">Consumer</option>
+                                    <option value="Special Economic Zone (SEZ)">Special Economic Zone (SEZ) (Business that is located in a special economic zone of india or a SEZ developer)</option>
+                                    <option value="Demed Exports">Demed Exports (Supply of woods to an exports oriented unit or againsed advanced authorization or export promotion capital woods)</option>
+                                    <option value="Tax Deductor">Tax Deductor (State of central gov,government agencies or local authority)</option>
+                                    <option value="SEZ Developer">SEZ Developer (A person or organization who owns atleast 26% equality in creating business units in special economic zone)</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a valid registration type.</div>
+                            </div>
+    
+                            <div class="col-md-4 gstrow d-block" id="gstInValue">
+                                <div>
+                                    <label for="custGstIN">GSTIN*</label>
+                                    <input type="text" class="form-control" onchange="checkgst(this)" id="custGstIN" name="gstin" style="background-color: #43596c;color: white;" placeholder="29APPCK7465F1Z1">
+                                    <a data-toggle="modal" href="#exampleModal" style="color:#3dd5f3">Get Taxpayer Details</a>
+                                    <div class="text-danger m-2" id="warngst"></div>
+                                </div>
+                            </div>
+    
+                            <div class="col-md-4">
+                                <label for="panNo">PAN No.*</label>
+                                <input type="text" class="form-control" id="panNo" name="pan_no" style="background-color: #43596c;color: white;" required onchange="checkpan(this)" placeholder="APPCK7465F">
+                                <div class="text-danger m-2" id="warnpan"></div>
+                            </div>
+                        </div>
+    
+                        <div class="row">
+                            <div class="col-md-4 mt-3">
+                                <label for="validationCustom05">Opening Balance</label>
+                                <div class="d-flex">
+                                    <select name="balance_type" id="bal" class="form-select text-white mr-1" style="background-color: #243e54; width: 25%; border-radius: 5px;">
+                                        <option value="debit">Debit</option>
+                                        <option value="credit">Credit</option>
+                                    </select>
+                                    <input type="text" class="form-control" name="open_balance" id="openbalance" step="any" style="background-color: #43596c;color: white;">
+                                    <div class="text-danger m-2" ></div>
+                                </div>
+                            </div>
+    
+                            <div class="col-md-4 mt-3">
+                                <label for="creditLimit">Credit Limit</label>
+                                <input type="text" class="form-control" name="credit_limit" style="background-color: #43596c;color: white;" step="any" id="creditLimit">
+                                <div class="text-danger m-2" ></div>
+                            </div>
+    
+                            <div class="col-md-4 mt-3">
+                                <label for="custPaymentTerms">Payment Terms</label>
+                                <div class="d-flex">
+                                    <select name="payment_terms" id="custPaymentTerms" class="form-control">
+                                        <option value="" selected>Choose</option>
+                                        {% for p in pTerms %}
+                                        <option value="{{p.id}}">{{p.term_name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <a href="#newCustomerPaymentTerm" data-dismiss="modal" data-toggle="modal" class="btn btn-outline-secondary ml-1">+</a>
+                                </div>
+                            </div>
+    
+                            <div class="col-md-4 mt-3">
+                                <label for="priceList">Price List</label>
+                                <select name="price_list" id="priceList" class="form-control">
+                                    <option value="" selected>Choose</option>
+                                    {% for l in list %}
+                                    <option value="{{l.id}}">{{l.name}}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+    
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <label for="custEmail">Email*</label>
+                                <input type="email" class="form-control" required id="custEmail" name="email" onchange="checkemail(this)" style="background-color: #43596c;color: white;" placeholder="finsys@gmail.com">
+                                <div id="warnemail" class="text-danger"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="custWebsite">Website</label>
+                                <input type="text" class="form-control" id="custWebsite" required placeholder="www.finsys.com" onchange="checkweb(this)" name="website" style="background-color: #43596c;color: white;">
+                                <div id="warnweb" class="text-danger"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="custMobile">Mobile*</label>
+                                <input type="text" class="form-control" id="custMobile" required onchange="checkphone(this)" name="mobile" style="background-color: #43596c;color: white;">
+                                <div class="text-danger m-2" id="warnphone"></div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mt-5">
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-md-12 card-title">
+                                        <h5 class="mb-0">Billing Address</h5>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12 mt-3">
+                                        <div class="form-row">
+                                            <label for="street">Street*</label>
+                                            <textarea class="form-control street" required id="street" name="street" style="background-color: #43596c;color: white;"></textarea>
+                                            <div class="invalid-feedback">Please provide a valid Street</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mt-3">
+                                        <div class="form-row">
+                                            <label for="city">City*</label>
+                                            <input type="text" class="form-control" required id="city" name="city" style="background-color: #43596c;color: white;" placeholder="City">
+                                            <div class="invalid-feedback">Please provide a valid City</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mt-3">
+                                        <div class="form-row">
+                                            <label for="state">State*</label>
+                                            <select type="text" class="form-control" id="state" name="state" required style="background-color: #43596c; color: white;">
+                                                <option value="" selected hidden>Choose</option>
+                                                <option value="Andaman and Nicobar Islads">Andaman and Nicobar Islands</option>
+                                                <option value="Andhra Predhesh">Andhra Predhesh</option>
+                                                <option value="Arunachal Predesh">Arunachal Predesh</option>
+                                                <option value="Assam">Assam</option>
+                                                <option value="Bihar">Bihar</option>
+                                                <option value="Chandigarh">Chandigarh</option>
+                                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                                <option value="Dadra and Nagar Haveli">Dadra and Nagar Haveli</option>
+                                                <option value="Damn anad Diu">Damn anad Diu</option>
+                                                <option value="Delhi">Delhi</option>
+                                                <option value="Goa">Goa</option>
+                                                <option value="Gujarat">Gujarat</option>
+                                                <option value="Haryana">Haryana</option>
+                                                <option value="Himachal Predesh">Himachal Predesh</option>
+                                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                                <option value="Jharkhand">Jharkhand</option>
+                                                <option value="Karnataka">Karnataka</option>
+                                                <option value="Kerala">Kerala</option>
+                                                <option value="Ladakh">Ladakh</option>
+                                                <option value="Lakshadweep">Lakshadweep</option>
+                                                <option value="Madhya Predesh">Madhya Predesh</option>
+                                                <option value="Maharashtra">Maharashtra</option>
+                                                <option value="Manipur">Manipur</option>
+                                                <option value="Meghalaya">Meghalaya</option>
+                                                <option value="Mizoram">Mizoram</option>
+                                                <option value="Nagaland">Nagaland</option>
+                                                <option value="Odisha">Odisha</option>
+                                                <option value="Puducherry">Puducherry</option>
+                                                <option value="Punjab">Punjab</option>
+                                                <option value="Rajasthan">Rajasthan</option>
+                                                <option value="Sikkim">Sikkim</option>
+                                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                                <option value="Telangana">Telangana</option>
+                                                <option value="Tripura">Tripura</option>
+                                                <option value="Uttar Predesh">Uttar Predesh</option>
+                                                <option value="Uttarakhand">Uttarakhand</option>
+                                                <option value="West Bengal">West Bengal</option>
+                                                <option value="Other Territory">Other Territory</option>
+                                            </select>
+                                            <div class="invalid-feedback">Please provide a valid State</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mt-3">
+                                        <div class="form-row">
+                                            <label for="pinco">Pin Code*</label>
+                                            <input type="text" class="form-control" required id="pinco" name="pincode" style="background-color: #43596c;color: white;" placeholder="PIN code">
+                                            <div class="invalid-feedback">Please provide a valid Pin Code</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mt-3">
+                                        <div class="form-row">
+                                            <label for="country">Country*</label>
+                                            <input type="text" class="form-control" required id="country" name="country" style="background-color: #43596c;color: white;" placeholder="Country">
+                                            <div class="invalid-feedback">Please provide a valid Country</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-md-12 d-flex">
+                                        <h5>Shipping Address</h5>
+                                        <input class="ml-4 ml-5" type="checkbox" onclick="placeShipAddress()" id="shipAddress" name="ship_address">
+                                        <label class="ml-2 mt-1 ml-2" for="shipAddress">Same As Billing Address</label>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12 mt-3">
+                                        <div class="form-row">
+                                            <label for="shipstreet">Street</label>
+                                            <textarea class="form-control" id="shipstreet" name="shipstreet" style="background-color: #43596c;color: white;"></textarea>
+                                            <div class="invalid-feedback">Please provide a valid Street</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mt-3">
+                                        <div class="form-row">
+                                            <label for="shipcity">City</label>
+                                            <input type="text" class="form-control" id="shipcity" name="shipcity" style="background-color: #43596c;color: white;" placeholder="City">
+                                            <div class="invalid-feedback">Please provide a valid City</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mt-3">
+                                        <div class="form-row">
+                                            <label for="shipstate">State</label>
+                                            <select type="text" class="form-control" id="shipState" name="shipstate" style="background-color: #43596c; color: white;">
+                                                <option value="" selected>Choose</option>
+                                                <option value="Andaman and Nicobar Islads">Andaman and Nicobar Islands</option>
+                                                <option value="Andhra Predhesh">Andhra Predhesh</option>
+                                                <option value="Arunachal Predesh">Arunachal Predesh</option>
+                                                <option value="Assam">Assam</option>
+                                                <option value="Bihar">Bihar</option>
+                                                <option value="Chandigarh">Chandigarh</option>
+                                                <option value="Chhattisgarh">Chhattisgarh</option>
+                                                <option value="Dadra and Nagar Haveli">Dadra and Nagar Haveli</option>
+                                                <option value="Damn anad Diu">Damn anad Diu</option>
+                                                <option value="Delhi">Delhi</option>
+                                                <option value="Goa">Goa</option>
+                                                <option value="Gujarat">Gujarat</option>
+                                                <option value="Haryana">Haryana</option>
+                                                <option value="Himachal Predesh">Himachal Predesh</option>
+                                                <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                                <option value="Jharkhand">Jharkhand</option>
+                                                <option value="Karnataka">Karnataka</option>
+                                                <option value="Kerala">Kerala</option>
+                                                <option value="Ladakh">Ladakh</option>
+                                                <option value="Lakshadweep">Lakshadweep</option>
+                                                <option value="Madhya Predesh">Madhya Predesh</option>
+                                                <option value="Maharashtra">Maharashtra</option>
+                                                <option value="Manipur">Manipur</option>
+                                                <option value="Meghalaya">Meghalaya</option>
+                                                <option value="Mizoram">Mizoram</option>
+                                                <option value="Nagaland">Nagaland</option>
+                                                <option value="Odisha">Odisha</option>
+                                                <option value="Puducherry">Puducherry</option>
+                                                <option value="Punjab">Punjab</option>
+                                                <option value="Rajasthan">Rajasthan</option>
+                                                <option value="Sikkim">Sikkim</option>
+                                                <option value="Tamil Nadu">Tamil Nadu</option>
+                                                <option value="Telangana">Telangana</option>
+                                                <option value="Tripura">Tripura</option>
+                                                <option value="Uttar Predesh">Uttar Predesh</option>
+                                                <option value="Uttarakhand">Uttarakhand</option>
+                                                <option value="West Bengal">West Bengal</option>
+                                                <option value="Other Territory">Other Territory</option>
+                                            </select>
+                                            <div class="invalid-feedback">Please provide a valid State</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mt-3">
+                                        <div class="form-row">
+                                            <label for="shippinco">Pin Code</label>
+                                            <input type="text" class="form-control" id="shippinco" name="shippincode" style="background-color: #43596c;color: white;" placeholder="PIN code">
+                                            <div class="invalid-feedback">Please provide a valid Pin Code</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mt-3">
+                                        <div class="form-row">
+                                            <label for="shipcountry">Country</label>
+                                            <input type="text" class="form-control" id="shipcountry" name="shipcountry" style="background-color: #43596c;color: white;" placeholder="Country">
+                                            <div class="invalid-feedback">Please provide a valid Country</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-4"></div>
+                            <div class="col-4 d-flex justify-content-center">
+                                <button class="btn btn-outline-secondary text-grey w-75" data-dismiss="modal" type="button" id="newCustomerSave">Save</button>
+                            </div>
+                            <div class="col-4"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>   
+    </div>
+</div>
+
+       <!-- New Cust Payment Term Modal -->
+
+<div class="modal fade" id="newCustomerPaymentTerm">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background-color: #213b52;">
+            <div class="modal-header">
+                <h5 class="m-3">New Customer Payment Term</h5>
+                <button type="button" class="close" data-toggle="modal" data-target="#newCustomer" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card p-3">
+                    <form method="post" id="newCustomerPaymentTermForm">
+                        {% csrf_token %}
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <label for="name">Term Name</label>
+                                <input type="text" name="term_name" id="custTermName" class="form-control w-100">
+                            </div>
+                            <div class="col-6">
+                                <label for="name">Days</label>
+                                <input type="number" name="days" id="custTermDays" class="form-control w-100" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-4"></div>
+                            <div class="col-4 d-flex justify-content-center">
+                                <button class="btn btn-outline-secondary text-grey w-75" data-toggle="modal" data-target="#newCustomer" type="button" id="saveCustomerPaymentTerm">Save</button>
+                            </div>
+                            <div class="col-4"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>   
+    </div>
+</div> 
+
+
+   <!-- NEW CUSTOMER -> Scripts -->
+
+   <script>
+    function placeShipAddress() {
+        var chkbtn = document.getElementById('shipAddress');
+        if (chkbtn.checked == true) {
+            document.getElementById('shipstreet').value = document.getElementById('street').value;
+            document.getElementById('shipcity').value = document.getElementById('city').value;
+            document.getElementById('shippinco').value = document.getElementById('pinco').value;
+            document.getElementById('shipcountry').value = document.getElementById('country').value;
+            document.getElementById('shipState').value = document.getElementById('state').value;
+        } else {
+            document.getElementById('shipstreet').value = '';
+            document.getElementById('shipcity').value = '';
+            document.getElementById('shippinco').value = '';
+            document.getElementById('shipcountry').value = '';
+            document.getElementById('shipState').value = '';
+            
+        }
+    }
+
+    $(document).on("click","#saveCustomerPaymentTerm",function(){
+        var trm = $('#custTermName').val();
+        var dys = $("#custTermDays").val();
+        if (trm !="" && dys !=""){
+            $.ajax({
+                type : 'POST',
+                url:"{% url 'Fin_newCustomerPaymentTerm2' %}",
+                data:{
+                    'term' : trm,
+                    'days' : dys,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                
+                success: function(response) {
+                    if(response.status){
+                        document.getElementById("newCustomerPaymentTermForm").reset();
+                        
+                        var dropdown = $('#custPaymentTerms');
+                        dropdown.empty();
+                        dropdown.append(`<option value="" selected>Choose</option>`);
+                        $.each(response, function(key, value) {
+                            for(let i=0; i<value.length; i++){
+                                if(value[i].name == trm){
+                                    dropdown.append($('<option selected></option>').text(value[i].name).val(value[i].id))
+                                }else{
+                                    dropdown.append($('<option></option>').text(value[i].name).val(value[i].id))
+                                }   
+                            }
+                        });
+
+                    }else{
+                        alert("Something went wrong.!")
+                    }
+                },         
+            });
+        }else{
+            alert('Invalid')
+        }
+    });
+
+    $(document).ready(function() {
+        $("#custGstType").change(function() {
+            var x=$('#custGstType').val();
+            if(x == "Unregistered Business" || x == 'Overseas' || x == 'Consumer'){
+                $(".gstrow").removeClass('d-block');
+                $(".gstrow").addClass('d-none');
+                $('#custGstIN').prop('required',false);
+            }else {
+                $('#custGstIN').prop('required',true);
+                $(".gstrow").removeClass('d-none');
+                $(".gstrow").addClass('d-block');
+            }
+        });
+    });
+
+        
+    function showMessage(input) {
+        const gstin = input.value;
+
+        if (gstin.length === 15) {
+            // document.getElementById("message").textContent = "Please wait, validating GSTIN format...";
+            setTimeout(() => checkgst(input), 1000);  // Wait for a second and then validate GSTIN
+        } else {
+            document.getElementById("message").textContent = "";
+        }
+    }
+
+    function checkgst(element) {
+        var gstinput = element.value;
+        var gstregexp = "[0-9]{2}[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[Z]{1}[0-9a-zA-Z]{1}";
+
+        if (gstinput.length === 15) {
+            if (gstinput.match(gstregexp)) {
+                document.getElementById('warngst').innerHTML = '';
+                checkCustomerGSTIN(gstinput)
+            } else {
+                document.getElementById('warngst').innerHTML = 'Please provide a valid GST Number';
+                alert('Please provide a valid GST Number');
+            }
+        }
+            else {
+            document.getElementById('warngst').innerHTML = 'Please provide a valid GST Number';
+            alert('Please provide a valid GST Number');
+        }
+    }
+
+    function checkpan(element) {
+        var paninput = element.value;
+        var panregexp = ["[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}"]
+        if (paninput.match(panregexp)) {
+            document.getElementById('warnpan').innerHTML = '';
+            checkCustomerPAN(paninput)
+        } else {
+            document.getElementById('warnpan').innerHTML = 'Please provide a valid PAN Number';
+            alert('Please provide a valid PAN Number')
+        }
+    }
+
+    function checkweb(element) {
+        var webinput = element.value;
+        var webregexp = "www."
+        if (webinput.startsWith(webregexp)) {
+            document.getElementById('warnweb').innerHTML = '';
+        } else {
+            document.getElementById('warnweb').innerHTML = 'Please provide a valid Website Address';
+            alert('Please provide a valid Website Address')
+        }
+    }
+
+    function checkphone(element) {
+        var phoneinput = element.value;
+        var phoneregexp = /^\d{10}$/;
+        if (phoneinput.match(phoneregexp)) {
+            document.getElementById('warnphone').innerHTML = '';
+            checkCustomerPhone(phoneinput)
+        } else {
+            document.getElementById('warnphone').innerHTML = 'Please provide a valid Phone Number';
+            alert('Please provide a valid Phone Number')
+        }
+    }
+
+    function checkemail(element) {
+        var emailinput = element.value;
+        var emailregexp = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+        if (emailinput.match(emailregexp)) {
+            document.getElementById('warnemail').innerHTML = '';
+            checkCustomerEmail(emailinput)
+        } else {
+            document.getElementById('warnemail').innerHTML = 'Please provide a valid Email ID';
+            alert('Please provide a valid Email id')
+        }
+    }
+
+    $(document).on('change', '#openbalance',function () {
+        openbal = $("#openbalance").val()
+        if($('#bal').val()=='credit'){
+            if(openbal.slice(0,1) != '-'){
+                if(parseFloat(openbal) != 0){
+                    document.getElementById("openbalance").value = "-"+openbal
+                }else{
+                    document.getElementById("openbalance").value = openbal
+                }
+            }else{
+                if(parseFloat(openbal) != 0){
+                    document.getElementById("openbalance").value = openbal
+                }else{
+                    document.getElementById("openbalance").value = -1 * parseFloat(openbal)
+                }
+            }
+        }else{
+            document.getElementById("openbalance").value = openbal
+        }
+    });
+
+    $(document).on('change', '#bal',function () {
+        openbal = $("#openbalance").val()
+        if(openbal != ""){
+            if($('#bal').val()=='credit'){
+                openbal = $("#openbalance").val()
+                if (parseFloat(openbal) != 0){
+                    document.getElementById("openbalance").value = "-"+openbal
+                }else{
+                    document.getElementById("openbalance").value = openbal
+                }
+            }else{
+                openbal = $("#openbalance").val()
+                document.getElementById("openbalance").value = -1*(parseFloat(openbal))
+            }
+        }
+    });
+
+    $(document).ready(function(){
+        $('#lastName').on('change',()=>{
+            var fName = $('#firstName').val().replace(/\d/g, '');
+            var lName = $('#lastName').val().replace(/\d/g, '');
+            if(fName !="" && lName !=""){
+                checkCustomerName(fName,lName)
+            }else{
+                alert('Please enter a valid Full Name.!')
+                return false
+            }
+        });
+
+        $('#firstName').on('change',()=>{
+            var fName = $('#firstName').val().replace(/\d/g, '');
+            var lName = $('#lastName').val().replace(/\d/g, '');
+            if(fName !="" && lName !=""){
+                checkCustomerName(fName,lName)
+            }else if(fName == "" && lName !=""){
+                alert('Please enter a valid First Name.!')
+            }
+
+        })
+    });
+
+    function checkCustomerName(fname,lname){
+        if (fname != "" && lname !=""){
+            $.ajax({
+                type : 'POST',
+                url:"{% url 'Fin_checkCustomerName2' %}",
+                data:{
+                    'fname' : fname,
+                    'lname' : lname,
+
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                
+                success: function(response) {
+                    if(response.is_exist){
+                        alert(response.message)
+                    }
+                },         
+            });
+        }
+    }
+
+    function checkCustomerGSTIN(gstin){
+        var gstNo = gstin;
+        if (gstNo != ""){
+            $.ajax({
+                type : 'POST',
+                url:"{% url 'Fin_checkCustomerGSTIN2' %}",
+                data:{
+                    'gstin' : gstNo,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                
+                success: function(response) {
+                    if(response.is_exist){
+                        alert(response.message)
+                    }
+                },         
+            });
+        }
+    }
+
+    function checkCustomerPAN(pan){
+        var panNo = pan;
+        if (panNo != ""){
+            $.ajax({
+                type : 'POST',
+                url:"{% url 'Fin_checkCustomerPAN2' %}",
+                data:{
+                    'pan' : panNo,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                
+                success: function(response) {
+                    if(response.is_exist){
+                        alert(response.message)
+                    }
+                },         
+            });
+        }
+    }
+
+    function checkCustomerPhone(phone){
+        var phoneNo = phone;
+        if (phoneNo != ""){
+            $.ajax({
+                type : 'POST',
+                url:"{% url 'Fin_checkCustomerPhone2' %}",
+                data:{
+                    'phone' : phoneNo,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                
+                success: function(response) {
+                    if(response.is_exist){
+                        alert(response.message)
+                    }
+                },         
+            });
+        }
+    }
+
+    function checkCustomerEmail(email){
+        var custEmail = email;
+        if (custEmail != ""){
+            $.ajax({
+                type : 'POST',
+                url:"{% url 'Fin_checkCustomerEmail2' %}",
+                data:{
+                    'email' : custEmail,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                
+                success: function(response) {
+                    if(response.is_exist){
+                        alert(response.message)
+                    }
+                },         
+            });
+        }
+    }
+
+    $(document).on("click", "#newCustomerSave", function(){
+        var fName = $('#firstName').val();
+        var lName = $('#lastName').val();
+        var placeSupply = $('#custPlaceOfSupply').val();
+        var gstType = $("#custGstType").val();
+        var gstIN = $("#custGstIN").val();
+        var panNo = $("#panNo").val();
+        var Email = $("#custEmail").val();
+        var Mob = $("#custMobile").val();
+        var street = $("#street").val();
+        var city = $("#city").val();
+        var state = $("#state").val();
+        var pin = $("#pinco").val();
+        var country = $("#country").val();
+
+        if(gstType != "Unregistered Business" && gstType != 'Overseas' && gstType != 'Consumer' && gstIN == ""){
+            alert('Fill all required fields..!')
+            return
+        }
+
+        if(fName != "" && lName != "" && placeSupply != "" && gstType != "" && panNo != "" && Email != "" && Mob != "" && street != "" && city != "" && state != "" && pin != "" && country != ""){
+            $.ajax({
+                type : 'POST',
+                url:"{% url 'Fin_createInvoiceCustomer2' %}",
+                data:{
+                    title : $('#title').val(),
+                    first_name : fName,
+                    last_name : lName,
+                    company_name : $("#companyName").val(),
+                    location : $("#location").val(),
+                    place_of_supply : placeSupply,
+                    gst_type : gstType,
+                    gstin : gstIN,
+                    pan_no : panNo,
+                    price_list :$('#priceList').val(),
+                    payment_terms :$('#custPaymentTerms').val(),
+                    open_balance : $("#openbalance").val(),
+                    balance_type : $("#bal").val(),
+                    credit_limit : $("#creditLimit").val(),
+                    email : Email,
+                    website :$("#custWebsite").val(),
+                    mobile : Mob,
+                    street : street,
+                    city : $("#city").val(),
+                    state : $("#state").val(),
+                    country : $("#country").val(),
+                    pincode : $("#pinco").val(),
+                    shipstreet : $("#shipstreet").val(),
+                    shipcity : $("#shipcity").val(),
+                    shipstate : $("#shipState").val(),
+                    shipcountry : $("#shipcountry").val(),
+                    shippincode : $("#shippinco").val(),
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+
+                success: function(response) {
+                    if(response.status){
+                        console.log("AJAX Success",response)
+                        document.getElementById("newCustomerForm").reset();
+
+                        reloadCustomer();
+                    }else{
+                        alert(response.message)
+                    }
+                },
+            });
+        }else{
+            alert('Fill all required fields..!')
+            return
+        }
+    });
+
+    function reloadCustomer() {
+        $.ajax({
+            url: "{% url 'Fin_getCustomers2' %}",
+            type: "GET",
+            dataType: "json",
+            data: {},
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+
+            success: function(data) {
+                var $select = $(document.getElementById('customer'));
+                var selectize = $select[0].selectize;
+                $.each(data, function(key, value) {
+                    selectize.addOption({value:value[0],text:value[1]+' '+value[2]+' '+value[3]});
+                    selectize.addItem(value[0]); 
+                });
+
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+            }
+
+        });
+        refreshCustomerDetails();
+
+        if ($('#newCustomerPaymentTerm').hasClass('show')){
+            $('#newCustomerPaymentTerm').modal('toggle');
+        }
+    }
+</script>
+{% endblock %}
