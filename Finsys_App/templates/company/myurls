@@ -1,0 +1,6 @@
+# my
+
+
+path('Fin_createchallanCustomer',views.Fin_createchallanCustomer, name='Fin_createchallanCustomer'),
+path('Fin_getCustomerschallan',views.Fin_getCustomerschallan, name='Fin_getCustomerschallan'),
+path('customerdata', views.customerdata, name='customerdata'),
