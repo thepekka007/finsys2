@@ -1,4 +1,4 @@
-<!-- Created --shemeem  -->
+<!-- Created --TINTO MT  -->
 {% extends 'company/Fin_base.html' %}
 {% block body %}
 <div class="page-content">
@@ -22,8 +22,8 @@
                 <button type="button" class="btn btn-outline-secondary dropdown-toggle text-grey" data-toggle="dropdown"><i class="fa fa-sort"></i> Sort by</button>
                 <div class="dropdown-menu" style="background-color: black">
                   <a class="dropdown-item" href="" style="height: 40px; font-size: 15px; color: white">All</a>
-                  <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="sortTable(1)">Name</a>
-                  <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="sortBalAsc()"> DC No</a>
+                  <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="sortTable(3)">Name</a>
+                  <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="sortBalAsc(2)"> DC No</a>
                 </div>
               </div>
             </div>
@@ -36,8 +36,8 @@
               <button type="button" class="btn btn-outline-secondary dropdown-toggle text-grey" data-toggle="dropdown"><i class="fa fa-filter"></i> filter by</button>
               <div class="dropdown-menu" style="background-color: black">
                 <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(6,'all')">All</a>
-                <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(6,'active')">Draft </a>
-                <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(6,'inactive')">Sent</a>
+                <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(5,'Draft')">Draft </a>
+                <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(6,'Save')">Save</a>
               </div>
             </div>
             <a href="{% url 'newdeliverychallan' %}" class="ml-1"></i><button type="button" class="btn btn-outline-secondary text-grey"><i class="fa fa-plus font-weight-light"></i> New</button></a>
@@ -62,16 +62,34 @@
         </thead>
         <tbody>
           {% for a in del %}
-          <tr class="clickable-row" data-href="{% url 'challan_overview' a.id %}" style="cursor: pointer;">
-            <td>{{ forloop.counter }}</td>
-            <td>{{ a.challan_date }}</td>
-            <td>{{ a.challan_no }}</td>
-            <td>{{ a.Customer.first_name }} {{ a.Customer.last_name }}</td>
-            <td>{{ a.Customer.email }}</td>
-            <td>{{ a.subtotal }}</td>
-            <td>{{ a.status }}</td>
-            <td>{{ a.balance }}</td>
-            <td>{{ a.balance }}</td>
+          <tr style="cursor: pointer;">
+            <td><a href="{% url 'challan_overview' a.id %}" >{{forloop.counter }}</a></td>
+            <td><a href="{% url 'challan_overview' a.id %}" >{{ a.challan_date }}</a></td>
+            <td><a href="{% url 'challan_overview' a.id %}" >{{ a.challan_no }}</a></td>
+            <td><a href="{% url 'challan_overview' a.id %}" >{{ a.Customer.first_name }} {{ a.Customer.last_name }}</a></td>
+            <td><a href="{% url 'challan_overview' a.id %}" >{{ a.Customer.email }}</a></td>
+            <td><a href="{% url 'challan_overview' a.id %}" >{{ a.subtotal }}</a></td>
+            <td><a href="{% url 'challan_overview' a.id %}" >{{ a.status }}</a></td>
+            <td><a href="{% url 'challan_overview' a.id %}" >{{ a.balance }}</a></td>
+            <td>{% if a.converted_to_invoice != None %}
+              <span class="text-info font-weight-bolder text-center" onclick="window.location.href=`{% url 'Fin_viewInvoice' a.converted_to_invoice.id %}`">Converted to <br>Invoice - #{{a.converted_to_invoice.invoice_no}}</span>
+             
+
+              {% elif a.converted_to_recurring_invoice != None %}
+              <span class="text-info font-weight-bolder text-center" onclick="window.location.href=`{% url 'Fin_viewRecurringInvoice' a.converted_to_recurring_invoice.id %}`">Converted to <br>Recurring Invoice - #{{a.converted_to_recurring_invoice.rec_invoice_no}}</span>
+              {% else %}
+              <div class="btn-group">
+                  <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                      Convert
+                  </button>
+                  <ul class="dropdown-menu">
+                    <!-- <li><button type="button" class="dropdown-item fw-bold" onclick="window.location.href=`{% url 'Fin_convertEstimateToSalesOrder' a.id %}`">To Sales Order</button></li> -->
+                    <li><button type="button" class="dropdown-item fw-bold" onclick="window.location.href=`{% url 'Fin_convertchallanToInvoice' a.id %}`">To Invoice</button></li>
+                    <li><button type="button" class="dropdown-item fw-bold" onclick="window.location.href=`{% url 'Fin_convertchallanToRecurringInvoice' a.id %}`">To Recurring Invoice</button></li>
+                  </ul>
+              </div>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>

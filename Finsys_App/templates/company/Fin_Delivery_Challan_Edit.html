@@ -1,4 +1,4 @@
-<!-- Created --shemeem  -->
+<!-- Created --TINTO MT  -->
 {% extends 'company/Fin_base.html' %}
 {% block body %}
 {% load static %}
@@ -26,7 +26,7 @@
    }
 
 </style>
-
+<span class="d-flex justify-content-end p-2" style="cursor: pointer;" onclick="window.location.href=`{% url 'deliverylist' %}`"><i class="fa fa-times-circle text-white" style="font-size: 1.2rem;"></i></span>
 <form action="{% url 'editchallan' estimate.id %}" method="post" class="needs-validation" enctype="multipart/form-data" onsubmit="return validateForm()">
   {% csrf_token %}
   <div class="page-content">
@@ -43,18 +43,25 @@
         <div id="estimate">
             <div class="row">
                 <div class="col-md-4 mt-3">
-                    <label class="">Select Customer</label><span class="text-danger ml-3" id="custErr"></span>
-                    <input type="hidden" name="customer" id="customerId" value="{{estimate.Customer.id}}">
+                      <label class=""> Customer</label><span class="text-danger ml-3" id="custErr"></span>
+                   <!-- <input type="hidden" name="customer" id="customerId" value="{{estimate.Customer.id}}"> -->
                     <div class="d-flex">
                         <div class="w-100">
                             <div class="p-0 border-0 bg-none position-relative drop-box" style="display: block;">
-                                <input required type="text" id="customer" value="{{estimate.Customer.title}} {{estimate.Customer.first_name}} {{estimate.Customer.last_name}}" name="customer" class="dropdown-toggle form-control customers-display" onkeyup="filterCustomers()" data-toggle="dropdown" aria-expanded="false" placeholder="Select Customer.." autocomplete="off">
+                               
+                                <select  class="form-control" name="customer" id="customer3" style="width: 93%;">
+                                    <!-- <option value="">Select Customer</option> -->
+                    {% for cust in customers %}
+                    <option value="{{ cust.id }}" {% if estimate.Customer.id == cust.id %}Selected{% endif %}> {{ cust.title }} {{ cust.first_name }} {{ cust.last_name }}</option>
+                    {% endfor %}
+                </select>
+                                <!-- <input required type="text" id="customer" value="{{estimate.Customer.title}} {{estimate.Customer.first_name}} {{estimate.Customer.last_name}}" name="customer" class="dropdown-toggle form-control customers-display" onkeyup="filterCustomers()" data-toggle="dropdown" aria-expanded="false" placeholder="Select Customer.." autocomplete="off">
                                 <ul class="dropdown-menu w-100 customers-available position-absolute" id="cust_drop"  style="overflow-y: auto; height: fit-content;max-height: 40vh;"> 
                                     <li class="dropdown-item customers-options" onclick="getCustomerDetails('','')">Select Customer</li>
                                     {% for cust in customers %}
                                     <li class="dropdown-item customers-options" onclick="getCustomerDetails(`{{cust.id}}`,this.innerHTML)">{{ cust.title }} {{ cust.first_name }} {{ cust.last_name }}</li>
                                     {% endfor %}
-                                </ul>
+                                </ul> -->
                                 
                             </div>
                         </div>
@@ -264,7 +271,7 @@
                                 <th class="text-center">PRODUCT / SERVICE</th>
                                 <th class="text-center">HSN</th>
                                 <th class="text-center">QTY</th>
-                                <!-- <th class="text-center">PRICE</th> -->
+                                <th class="text-center">RATE</th>
                                 <th class="text-center">TAX (%)</th>
                                 <th class="text-center">DISCOUNT</th>
                                 <th class="text-center">TOTAL</th>
@@ -294,15 +301,15 @@
                                 </td>
                                 <td>
                                     <input type="hidden" name="id[]" value="{{itm.id}}">
-                                    <input type="hidden" name="item_id[]" value="{{itm.Item.id}}" id="itemId{{forloop.counter}}">
+                                    <input type="hidden" name="item_id[]" value="{{itm.items.id}}" id="itemId{{forloop.counter}}">
                                     <input type="text" name='hsn[]' id="hsn{{forloop.counter}}" value="{{itm.hsn}}" placeholder='HSN Code' class="form-control HSNCODE" style="background-color: #43596c; color: white;" readonly />
                                 </td>
                                 <td >
                                     <input type="number" name='qty[]' id="qty{{forloop.counter}}"  class="form-control qty" step=0 min=1 style="background-color: #43596c; color: white;" value={{itm.quantity}} required/>
                                 </td>
-                                <!-- <td>
-                                    <input type="number" name='price[]' id="price{{forloop.counter}}" class="form-control price" step="0.00" min="0" style="background-color: #43596c; color: white; display: block;" value={{itm.price}} readonly />
-                                </td> -->
+                                <td>
+                                    <input type="number" name='price[]' id="price{{forloop.counter}}" class="form-control price" step="0.00" min="0" style="background-color: #43596c; color: white; display: block;" value={{itm.items.selling_price}} readonly />
+                                </td>
                                 
                                 <td style="width: 13%;">
                                     <!-- <input type="text"  id="select_tax" placeholder="Tax Rate" class="form-control seltax d-flex"> -->
@@ -421,7 +428,7 @@
             <div class="row">
                 <div class="col-md-7 mt-3">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="" id="agreeTerms" required style="background-color: #43596c;">
+                        <input class="form-check-input" type="checkbox" checked value="" id="agreeTerms" required style="background-color: #43596c;">
                         <label for="agreeTerms">Agree to terms and conditions</label>
                         <div class="invalid-feedback">You must agree before submitting.</div>
                     </div>

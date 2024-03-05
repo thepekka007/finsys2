@@ -576,7 +576,29 @@ path('Fin_getCustomerschallan',views.Fin_getCustomerschallan, name='Fin_getCusto
 path('customerdata', views.customerdata, name='customerdata'),
 path('challan_overview/<int:id>',views.challan_overview,name='challan_overview'),
 path('editchallan/<int:id>',views.editchallan,name='editchallan'),
+path('Fin_editchallanto/<int:id>',views.Fin_editchallanto,name='Fin_editchallanto'),
 
+path('Fin_deleteChallan/<int:id>',views.Fin_deleteChallan, name= 'Fin_deleteChallan'),
+path('Fin_addchallanComment/<int:id>',views.Fin_addchallanComment, name= 'Fin_addchallanComment'),
+path('Fin_deletechallanComment/<int:id>',views.Fin_deletechallanComment, name='Fin_deletechallanComment'),
+
+path('Fin_attachchallanFile/<int:id>',views.Fin_attachchallanFile, name='Fin_attachchallanFile'),
+path('Fin_convertchallan/<int:id>',views.Fin_convertchallan, name='Fin_convertchallan'),
+
+path('Fin_convertchallanToInvoice/<int:id>',views.Fin_convertchallanToInvoice, name='Fin_convertchallanToInvoice'),
+
+path('Fin_estimatechallanInvoice/<int:id>',views.Fin_estimatechallanInvoice, name='Fin_estimatechallanInvoice'),
+
+path('Fin_convertchallanToRecurringInvoice/<int:id>',views.Fin_convertchallanToRecurringInvoice, name='Fin_convertchallanToRecurringInvoice'),
+
+path('Fin_challanConvertRecInvoice/<int:id>',views.Fin_challanConvertRecInvoice, name='Fin_challanConvertRecInvoice'),
+
+path('Fin_sharechallanToEmail/<int:id>',views.Fin_sharechallanToEmail, name='Fin_sharechallanToEmail'),
+
+
+path('Fin_checkchallanNumber',views.Fin_checkchallanNumber, name='Fin_checkchallanNumber'),
+
+path('customer_dropdown',views.customer_dropdown, name='customer_dropdown'),
 
 
 

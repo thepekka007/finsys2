@@ -1,4 +1,4 @@
-<!-- Created -- shemeem  -->
+<!-- Created -- TINTO MT  -->
 {% extends 'company/Fin_base.html' %}
 {% block body %}
 {% load social_share %}
@@ -295,7 +295,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
 
 <div class="page-content " id="page-content">
-    <span class="d-flex justify-content-end p-2" style="cursor: pointer;" onclick=""><i class="fa fa-times-circle text-white" style="font-size: 1.2rem;"></i></span>
+    <span class="d-flex justify-content-end p-2" style="cursor: pointer;" onclick="window.location.href=`{% url 'deliverylist' %}`"><i class="fa fa-times-circle text-white" style="font-size: 1.2rem;"></i></span>
     <div class="card radius-15">
         <div class="card-body" style="width:100%;">
             <div class="card-title">
@@ -312,7 +312,7 @@
                             <div class="dropdown p-0 nav-item"  id="convertBtn" style="display: block;">
                                 <li  class="dropdown-toggle btn btn-outline-secondary text-grey fa fa-exchange" data-toggle="dropdown">&nbsp;Convert</li>
                                 <ul class="dropdown-menu" style="background-color: black;" id="">
-                                    <a class="dropdown-item" href="">Saved</a>
+                                    <a class="dropdown-item" href="{% url 'Fin_convertchallan' estimate.id %}">Saved</a>
                                 </ul>
                             </div>
                             {% endif %}
@@ -326,16 +326,16 @@
                                     <li style="text-align: center;color: #e5e9ec; cursor: pointer;" data-toggle="modal" data-target="#shareToEmail">Email</li>
                                 </ul>
                             </div>
-                            <a href="{% url 'editchallan' estimate.id %}" class="ml-2 fa fa-pencil btn btn-outline-secondary text-grey" id="editBtn" role="button">&nbsp;Edit</a>
-                            <a href="" class="ml-2 btn btn-outline-secondary text-grey fa fa-trash" id="deleteBtn" role="button" onclick="return confirm('Are you sure you want to delete Estimate - {{estimate.estimate_no}}.?')">&nbsp;Delete</a>
+                            <a href="{% url 'Fin_editchallanto' estimate.id %}" class="ml-2 fa fa-pencil btn btn-outline-secondary text-grey" id="" role="button">&nbsp;Edit</a>
+                            <a href="{% url 'Fin_deleteChallan' estimate.id %}" class="ml-2 btn btn-outline-secondary text-grey fa fa-trash" id="deleteBtn" role="button" onclick="return confirm('Are you sure you want to delete Delivery Challan - {{estimate.challan_no}}.?')">&nbsp;Delete</a>
                             <a href=""  class="ml-2 btn btn-outline-secondary text-grey fa fa-comments" id="commentsBtn" role="button" data-toggle="modal" data-target="#commentModal">&nbsp;Comment</a>
-                            <a href=""  class="ml-2 btn btn-outline-secondary text-grey fa fa-history" id="historyBtn" role="button" >&nbsp;History</a>
+                            <a href=""  class="ml-2 btn btn-outline-secondary text-grey fa fa-history" id="historyBtn" role="button" data-toggle="modal" data-target="#history" >&nbsp;History</a>
                             <div class="dropdown p-0 nav-item"  id="attachBtn" style="display: block;">
                                 <li  class="ml-2 dropdown-toggle btn btn-outline-secondary text-grey fa fa-paperclip" data-toggle="dropdown">&nbsp;Attach</li>
                                 <ul class="dropdown-menu" style="background-color: black;">
                                     <a class="dropdown-item fa fa-paperclip" style="cursor: pointer;" data-toggle="modal" data-target="#attachFileModal">&nbsp; Attach file</a>
-                                    {% if estimate.file %}
-                                    <a class="dropdown-item fa fa-download" style="cursor: pointer;" download  href="">&nbsp; Download file</a>
+                                    {% if estimate.document %}
+                                    <a class="dropdown-item fa fa-download" style="cursor: pointer;" download  href="{{ estimate.document.url }}">&nbsp; Download file</a>
                                     {% endif %}
                                 </ul>
                             </div>
@@ -655,7 +655,7 @@
                                             <tr>
                                                 <td style="text-align: center; font-weight:bold; color:black">Items</td>
                                                 <td style="font-weight:bold; color:black">HSN</td>
-                                                <!-- <td style="font-weight:bold; color:black">Price</td> -->
+                                                <td style="font-weight:bold; color:black">Rate</td>
                                                 <td style="font-weight:bold; color:black">Quantity</td>
                                                 <td style="font-weight:bold; color:black">Tax</td>
                                                 <td style="font-weight:bold; color:black">Discount</td>
@@ -668,9 +668,9 @@
                                             <tr>
                                                 <td style="color:black; text-align: center;">{{j.items.name}}</td>
                                                 <td style="color:black">{{j.hsn}}</td>
-                                                <!-- <td style="color:black">{{j.price}}</td> -->
+                                                <td style="color:black">{{j.items.selling_price}}</td>
                                                 <td style="color:black">{{j.quantity}}</td>
-                                                <td style="color:black">{{j.tax}} %</td>
+                                                <td style="color:black">{{j.tax_rate}} %</td>
                                                 <td style="color:black">{{j.discount}} </td>
                                                 <td style="color:black">{{j.total}}</td>
                                             </tr>
@@ -810,7 +810,7 @@
                                                   <th class="text-center bg-dark" style="color:black">Items</th>
                                                   <th class="text-center bg-dark" style="color:black">HSN</th>
                                                   <th class="text-center bg-dark" style="color:black">Quantity</th>
-                                                  <!-- <th class="text-center bg-dark" style="color:black">Rate</th> -->
+                                                  <th class="text-center bg-dark" style="color:black">Rate</th>
                                                   <th class="text-center bg-dark" style="color:black">Tax</th>
                                                   <th class="text-center bg-dark" style="color:black">Discount</th>
                                                   <th class="text-center bg-dark" style="color:black">Total</th>
@@ -822,8 +822,9 @@
                                                       <td class="text-center" style="color:black">{{ itm.items.name}}</td>
                                                       <td class="text-center" style="color:black">{{ itm.hsn }}</td>
                                                       <td class="text-center" style="color:black">{{ itm.quantity }}</td>
-                                                      <td class="text-center" style="color:black">{{ itm.tax_rate  }}</td>
-                                                      <!-- <td class="text-center" style="color:black">{{ itm.tax  }}%</td> -->
+                                                      <td class="text-center" style="color:black">{{ itm.items.selling_price  }}</td>
+                                                      <td class="text-center" style="color:black">{{ itm.tax_rate  }}%</td>
+                                                      
                                                       <td class="text-center" style="color:black">{{ itm.discount  }}</td>
                                                       <td class="text-center" style="color:black">{{ itm.total }}</td>
                                                   </tr>
@@ -981,7 +982,7 @@
                                                     <th class="text-center"  style="color:black; background-color: gray;">Items</th>
                                                     <th class="text-center"  style="color:black; background-color: gray;">HSN</th>
                                                     <th class="text-center"  style="color:black; background-color: gray;">Quantity</th>
-                                                    <!-- <th class="text-center"  style="color:black; background-color: gray;">Rate</th> -->
+                                                    <th class="text-center"  style="color:black; background-color: gray;">Rate</th>
                                                     <th class="text-center"  style="color:black; background-color: gray;">Tax</th>
                                                     <th class="text-center"  style="color:black; background-color: gray;">Discount</th>
                                                     <th class="text-center"  style="color:black; background-color: gray;">Total</th>
@@ -993,7 +994,7 @@
                                                         <td class="text-center" style="color: black;">{{ itm.items.name}}</td>
                                                         <td class="text-center" style="color: black;">{{ itm.hsn }}</td>
                                                         <td class="text-center" style="color: black;">{{ itm.quantity }}</td>
-                                                        <!-- <td class="text-center" style="color: black;">{{ itm.price }}</td> -->
+                                                        <td class="text-center" style="color: black;">{{ itm.items.selling_price }}</td>
                                                         <td class="text-center" style="color: black;">{{ itm.tax_rate }}%</td>
                                                         <td class="text-center" style="color: black;">{{ itm.discount }}</td>
                                                         <td class="text-center" style="color: black;">{{ itm.total }}</td>
@@ -1132,10 +1133,10 @@
                                 Qty
                                 <hr style="border-bottom: 1px solid black; margin-top:1vh; width:60%;  margin-left: 10px;">
                             </div>
-                            <!-- <div class="equal-length-item"  style=" text-align: center; ">
+                            <div class="equal-length-item"  style=" text-align: center; ">
                                 Rate
                                 <hr style="border-bottom: 1px solid black; margin-top:1vh; width:65%;  margin-left: 10px;">
-                            </div> -->
+                            </div>
                             <div class="equal-length-item"  style=" text-align: center; ">
                                 Tax
                                 <hr style="border-bottom: 1px solid black; margin-top:1vh; width:60%;  margin-left: 10px;">
@@ -1156,9 +1157,9 @@
                             <div class="equal-length-item" style="text-align: center; ">
                                 {{i.quantity}}
                             </div>
-                            <!-- <div class="equal-length-item" style="text-align: center; ">
-                                {{i.price}}
-                            </div> -->
+                            <div class="equal-length-item" style="text-align: center; ">
+                                {{i.items.selling_price}}
+                            </div>
                             <div class="equal-length-item" id="tax{{ forloop.counter }}">
                                 {{ i.tax_rate  }}%
                             </div>
@@ -1249,7 +1250,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="" method="post" enctype="multipart/form-data" class="needs-validation">
+            <form action="{% url 'Fin_attachchallanFile' estimate.id %}" method="post" enctype="multipart/form-data" class="needs-validation">
                 <div class="modal-body">
                     <div class="card p-3">
                         
@@ -1282,7 +1283,7 @@
             </div>
             <div class="modal-body">
                 <div class="card p-3">
-                    <form action="" method="post" class="needs-validation" id="share_to_email_form">
+                    <form action="{% url 'Fin_sharechallanToEmail' estimate.id %}" method="post" class="needs-validation" id="share_to_email_form">
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="emailIds">Email IDs</label>
@@ -1313,7 +1314,7 @@
                 </button>
             </div>
 
-            <form action="" method="post">
+            <form action="{% url 'Fin_addchallanComment' estimate.id %}" method="post">
                 {% csrf_token %}
                 <div class="modal-body">
                     <textarea type="text" class="form-control" name="comment" placeholder="Add Comments.." required></textarea>
@@ -1334,7 +1335,7 @@
                                 <tr class="">
                                     <td class="text-center">{{forloop.counter }}</td>
                                     <td class="text-center">{{c.comments}}</td>
-                                    <td class="text-center"><a class="text-danger" href="" onclick="return confirm('Are you sure you want to delete.?')"><i class="fa fa-trash" style="font-size: 1.1rem;"></i></a></td>
+                                    <td class="text-center"><a class="text-danger" href="{% url 'Fin_deletechallanComment' c.id %}" onclick="return confirm('Are you sure you want to delete.?')"><i class="fa fa-trash" style="font-size: 1.1rem;"></i></a></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -1353,6 +1354,56 @@
 </div>
 
 
+<!-- History modal  -->
+
+<div class="modal fade" id="history" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"  aria-hidden="true" style="margin-top: 8vh;width: 100%;">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content" style="background-color: #2f516f;">
+        <div class="modal-header">
+          <h3 class="modal-title text-light" id="exampleModalLabel">HISTORY</h3>
+          <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true" style="font-size: x-large;">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+        <div class="container " >
+          <table class="table text-light table-borderless " style="margin:3px;width: 100%;">
+            <thead>
+              <tr>
+                <th style="background-color: 2f516f;">
+                  sl
+                </th>
+                <th style="background-color: 2f516f;">
+                  Date
+                </th>
+                <th style="background-color: 2f516f;">
+                  Action
+                </th>
+                <th style="background-color: 2f516f;"> 
+                  By
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for i in histpry2 %}
+              <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{i.date|date:'Y-m-d'}}</td>
+                <td>{{i.action}}</td>
+                <td>{{ i.LoginDetails.title }}&nbsp;{{ i.LoginDetails.First_name }}&nbsp;{{ i.LoginDetails.Last_name }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-warning" data-dismiss="modal">Close</button>
+  
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 <script>
