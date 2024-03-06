@@ -316,7 +316,7 @@
                                 </ul>
                             </div>
                             {% endif %}
-                            <a href="" class="ml-2 btn btn-outline-secondary text-grey fa fa-file" role="button" id="pdfBtn" style="display: none;"> &nbsp;PDF</a> 
+                            <a onclick="tempPDF()" class="ml-2 btn btn-outline-secondary text-grey fa fa-file" role="button" id="pdfBtn" style="display: none;"> &nbsp;PDF</a> 
                             <a class="ml-2 btn btn-outline-secondary text-grey fa fa-file" role="button" onclick="slipPDF()" id="slipPdfBtn" style="display: none;"> &nbsp;PDF</a> 
                             <a class="ml-2 btn btn-outline-secondary text-grey fa fa-print" role="button" id="printBtn" style="display: none; " onclick="printSection('whatToPrint')">&nbsp;Print</a>
                             <div class="dropdown p-0 nav-item"  id="shareBtn" style="display: none;">
@@ -416,7 +416,7 @@
 
                                 <div class="row mb-4 d-flex justify-content-between align-items-center">
                                     <div class="col-md-4 mt-3">
-                                        <h5 style="border-bottom: 1px solid rgba(128, 128, 128, 0.6); width: fit-content;">Billing Details</h5>
+                                        <h5 style="border-bottom: 1px solid rgba(128, 128, 128, 0.6); width: fit-content;">Delivery Challan Details</h5>
                                     </div>
                                     <div class="col-md-4 mt-3"></div>
                                     <div class="col-md-4 mt-3"></div>
@@ -539,10 +539,10 @@
                     <div class="col-lg-4 bg-grey">
 
                         <div class="px-3">
-                            <h4 class="fw-bold mb-2 mt-4 pt-1">Bill Details</h4>
+                            <h4 class="fw-bold mb-2 mt-4 pt-1">Delivery Challan Details</h4>
                             <hr class="my-4">
                             <div class="d-flex justify-content-between mb-4">
-                                <h6 class="">Bill Status</h6>
+                                <h6 class="">Challan Status</h6>
                                 {% if estimate.status == 'Draft' %} <span class="text-info h5 font-weight-bold">DRAFT</span> {% else %} <span class="text-success h5 font-weight-bold">SAVED</span> {% endif %}
                             </div>
                             <div class="d-flex justify-content-between mb-4">
@@ -603,7 +603,7 @@
                         <div class="my-5 page" size="A4" >
                             <div class="p-4" id="printdiv1">
                                 <div id="ember2512" class="tooltip-container ember-view ribbon text-ellipsis">
-                                    <div class="ribbon-inner ribbon-open">{{estimate.status}}<!----></div></div>
+                                    <div class="ribbon-inner ribbon-open"></div></div>
                                 <section class="top-content bb d-flex justify-content-between">
                                     <div class="logo">
                                         <!-- <img src="logo.png" alt="" class="img-fluid"> -->
@@ -631,10 +631,10 @@
                                                 </p>
                                                 
                                             </div>
-                                            <div class="col-5">
-                                                <p>TO,</p>
-                                                <h5>{{estimate.Customer.title}} {{estimate.Customer.first_name}} {{estimate.Customer.last_name}}</h5>
-                                                <p class="address col-9" style="margin-left: -14px;" > {{ estimate.billing_address}} </p>
+                                            <div class="col-5" >
+                                                <p style="text-align: right;">TO,</p>
+                                                <h5 style="text-align: right;">{{estimate.Customer.title}} {{estimate.Customer.first_name}} {{estimate.Customer.last_name}}</h5>
+                                                <p class="address " style="text-align: right;" > {{ estimate.billing_address}} </p>
                                                 
                                             </div>
                                         </div>
@@ -759,7 +759,7 @@
                             <div id="printdiv2">
                                 <div class="row px-5 py-4" style="background-color:#268ddd;" >
                                     <div id="ember2512" class="col-md-4 d-flex justify-content-start tooltip-container ember-view ribbon text-ellipsis">
-                                      <div class="text-white d-flex align-items-center px-5" style="border-radius: 1vh; background-color:#999999">{{estimate.status}}<!----></div>
+                                      <div class="text-white d-flex align-items-center px-5" style="border-radius: 1vh; background-color:#99999900"><!----></div>
                                   </div>
                                   <div class="col-md-4 d-flex justify-content-center">
                                       <center class="h3 text-white"><b>DELIVERY CHALLAN</b></center>
@@ -1276,7 +1276,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="background-color: #213b52;">
             <div class="modal-header">
-                <h5 class="m-3">Share Estimate</h5>
+                <h5 class="m-3">Share Delivery Challan</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -1291,7 +1291,7 @@
                         </div>
                         <div class="form-group mt-2">
                             <label for="item_unitname">Message(optional)</label>
-                            <textarea name="email_message" id="email_message" class="form-control" cols="" rows="4" placeholder="This message will be sent along with Bill details."></textarea>
+                            <textarea name="email_message" id="email_message" class="form-control" cols="" rows="4" placeholder="This message will be sent along with Challan details."></textarea>
                         </div>
                     </form>
                 </div>
@@ -1448,8 +1448,8 @@
         $('#editBtn').hide();
         $('#convertBtn').hide();
         $('#deleteBtn').hide();
-        $('#historyBtn').show();
-        $('#commentsBtn').show();
+        $('#historyBtn').hide();
+        $('#commentsBtn').hide();
         $('#attachBtn').hide();
     }
 
@@ -1468,8 +1468,8 @@
         $('#slipPdfBtn').show();
         $('#editBtn').hide();
         $('#convertBtn').hide();
-        $('#historyBtn').show();
-        $('#commentsBtn').show();
+        $('#historyBtn').hide();
+        $('#commentsBtn').hide();
         $('#attachBtn').hide();
     }
 
@@ -1632,18 +1632,31 @@
     }
 
     function slipPDF(){
-        var estimateNo = `{{estimate.estimate_no }}`;
+        var estimateNo = `{{estimate.challan_no }}`;
         var element = document.getElementById('slip');
         var opt =
         {
             margin: 1,
-            filename: 'Estimate_Slip_'+ estimateNo + '.pdf',
+            filename: 'Delivery_Challan'+ estimateNo + '.pdf',
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
         html2pdf().set(opt).from(element).save();
     }
+    function tempPDF() {
+    var estimateNo = `{{estimate.challan_no }}`;
+    var element = document.getElementById('whatToPrint');
+    var opt = {
+        margin: 1,
+        filename: 'Delivery_Challan' + estimateNo + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } // Updated to A4 size
+    };
+    html2pdf().set(opt).from(element).save();
+}
+
 </script>
 
 {% endblock %}

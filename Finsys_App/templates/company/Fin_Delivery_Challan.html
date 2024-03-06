@@ -10,6 +10,12 @@
       </div>
     </div>
   </div>
+<!-- Add this in the <head> section of your HTML -->
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <!-- Add this in the <head> section of your HTML -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+
 
   <div class="card radius-15">
     <div class="card-body">
@@ -23,7 +29,30 @@
                 <div class="dropdown-menu" style="background-color: black">
                   <a class="dropdown-item" href="" style="height: 40px; font-size: 15px; color: white">All</a>
                   <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="sortTable(3)">Name</a>
-                  <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="sortBalAsc(2)"> DC No</a>
+                  <!-- <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="sortBalAsc(2)"> DC No</a> -->
+                  <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="sortChallanAsc(2)">DC No</a>
+                  <script>
+                    function sortChallanAsc() {
+                      var table = document.getElementById("customersTable");
+                      var rows = Array.from(table.rows).slice(1);
+                  
+                      rows.sort(function (a, b) {
+                        var challanA = parseInt(a.cells[2].textContent);
+                        var challanB = parseInt(b.cells[2].textContent);
+                        return challanA - challanB;
+                      });
+                  
+                      // Remove existing rows from the table
+                      for (var i = table.rows.length - 1; i > 0; i--) {
+                        table.deleteRow(i);
+                      }
+                  
+                      // Append the sorted rows back to the table
+                      rows.forEach(function (row) {
+                        table.tBodies[0].appendChild(row);
+                      });
+                    }
+                  </script>
                 </div>
               </div>
             </div>
@@ -36,8 +65,8 @@
               <button type="button" class="btn btn-outline-secondary dropdown-toggle text-grey" data-toggle="dropdown"><i class="fa fa-filter"></i> filter by</button>
               <div class="dropdown-menu" style="background-color: black">
                 <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(6,'all')">All</a>
-                <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(5,'Draft')">Draft </a>
-                <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(6,'Save')">Save</a>
+                <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(6,'Draft')">Draft </a>
+                <a class="dropdown-item" style="height: 40px; font-size: 15px; color: white;cursor: pointer;" onclick="filterTable(6,'Saved')">Save</a>
               </div>
             </div>
             <a href="{% url 'newdeliverychallan' %}" class="ml-1"></i><button type="button" class="btn btn-outline-secondary text-grey"><i class="fa fa-plus font-weight-light"></i> New</button></a>
@@ -118,7 +147,7 @@
     const ws = XLSX.utils.table_to_sheet(Table);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, "Customers.xlsx");
+    XLSX.writeFile(wb, "Delivery_Challan.xlsx");
   });
 
   jQuery(document).ready(function ($) {
@@ -155,14 +184,16 @@
   }
 
   function filterTable(row,filterValue) {
+    console.log('Filtering table:', row, filterValue);
     var table = document.getElementById("customersTable");
     var rows = table.getElementsByTagName("tr");
 
     for (var i = 1; i < rows.length; i++) {
       var statusCell = rows[i].getElementsByTagName("td")[row];
 
-      if (filterValue == "all" || statusCell.textContent.toLowerCase() == filterValue) {
+      if (filterValue == "all" || statusCell.textContent == filterValue) {
         rows[i].style.display = "";
+        
       } else {
         rows[i].style.display = "none";
       }

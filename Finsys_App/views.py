@@ -18412,6 +18412,7 @@ def newdeliverychallan(request):
                 'LoginDetails': data,
                 'allmodules': allmodules,
                 'data': data,
+                'com':com,
                 
                 'customers': cust,
                 'items': itms,
@@ -18813,9 +18814,9 @@ def editchallan(request,id):
                 action = 'Edited'
             )
 
-            return redirect(Fin_editchallanto, id)
+            return redirect(challan_overview, id)
         else:
-            return redirect(Fin_editchallanto, id)
+            return redirect(challan_overview, id)
    
 def Fin_editchallanto(request,id):
     if 's_id' in request.session:
@@ -18987,7 +18988,7 @@ def Fin_convertchallanToInvoice(request,id):
             'allmodules':allmodules, 'com':com, 'cmp':cmp, 'data':data,'estimate':est, 'estItems':estItms, 'customers':cust, 'items':itms, 'pTerms':trms,'list':lst,
             'banks':bnk,'units':units, 'accounts':acc,'ref_no':new_number,'invNo':nxtInv
         }
-        return render(request,'company/Fin_Convert_Delivery_CHallan_toInvoice.html',context)
+        return render(request,'company/Fin_Convert_Delivery_Challan_toInvoice.html',context)
     else:
        return redirect('/')
 
@@ -19414,3 +19415,169 @@ def customer_dropdown(request):                                                 
                 options[option.id] = [title,first_name,last_name,f"{title}"]
             return JsonResponse(options)
     
+
+
+
+# updated
+
+
+def Fin_convertchallanToInvoice(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+            allmodules = Fin_Modules_List.objects.get(Login_Id = s_id,status = 'New')
+            cmp = com
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id)
+            allmodules = Fin_Modules_List.objects.get(company_id = com.company_id,status = 'New')
+            cmp = com.company_id
+
+        est = Fin_Delivery_Challan.objects.get(id = id)
+        estItms = Fin_Delivery_Challan_Items.objects.filter(delivery_challan = est)
+        cust = Fin_Customers.objects.filter(Company = cmp, status = 'Active')
+        itms = Fin_Items.objects.filter(Company = cmp, status = 'Active')
+        trms = Fin_Company_Payment_Terms.objects.filter(Company = cmp)
+        bnk = Fin_Banking.objects.filter(company = cmp)
+        lst = Fin_Price_List.objects.filter(Company = cmp, status = 'Active')
+        units = Fin_Units.objects.filter(Company = cmp)
+        acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=cmp).order_by('account_name')
+
+        # Fetching last invoice and assigning upcoming ref no as current + 1
+        # Also check for if any bill is deleted and ref no is continuos w r t the deleted invoice
+        latest_inv = Fin_Invoice.objects.filter(Company = cmp).order_by('-id').first()
+
+        new_number = int(latest_inv.reference_no) + 1 if latest_inv else 1
+
+        if Fin_Invoice_Reference.objects.filter(Company = cmp).exists():
+            deleted = Fin_Invoice_Reference.objects.get(Company = cmp)
+            
+            if deleted:
+                while int(deleted.reference_no) >= new_number:
+                    new_number+=1
+
+        # Finding next invoice number w r t last invoic number if exists.
+        nxtInv = ""
+        lastInv = Fin_Invoice.objects.filter(Company = cmp).last()
+        if lastInv:
+            inv_no = str(lastInv.invoice_no)
+            numbers = []
+            stri = []
+            for word in inv_no:
+                if word.isdigit():
+                    numbers.append(word)
+                else:
+                    stri.append(word)
+            
+            num=''
+            for i in numbers:
+                num +=i
+            
+            st = ''
+            for j in stri:
+                st = st+j
+
+            inv_num = int(num)+1
+
+            if num[0] == '0':
+                if inv_num <10:
+                    nxtInv = st+'0'+ str(inv_num)
+                else:
+                    nxtInv = st+ str(inv_num)
+            else:
+                nxtInv = st+ str(inv_num)
+
+        context = {
+            'allmodules':allmodules, 'com':com, 'cmp':cmp, 'data':data,'estimate':est, 'estItems':estItms, 'customers':cust, 'items':itms, 'pTerms':trms,'list':lst,
+            'banks':bnk,'units':units, 'accounts':acc,'ref_no':new_number,'invNo':nxtInv
+        }
+        return render(request,'company/Fin_Convert_Delivery_Challan_toInvoice.html',context)
+    else:
+       return redirect('/')
+
+def newdeliverychallan(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        try:
+            data = Fin_Login_Details.objects.get(id=s_id)
+            if data.User_Type == "Company":
+                com = Fin_Company_Details.objects.get(Login_Id=data)
+                cmp = com
+                allmodules = Fin_Modules_List.objects.get(Login_Id=s_id, status='New')
+                
+                cust = Fin_Customers.objects.filter(Company=com, status='Active')
+                itms = Fin_Items.objects.filter(Company=com, status='Active')
+                units = Fin_Units.objects.filter(Company=com)
+                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com).order_by('account_name')
+                lst = Fin_Price_List.objects.filter(Company=com, status='Active')
+                
+                trms = Fin_Company_Payment_Terms.objects.filter(Company = com)
+            else:
+                com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+                cmp = com
+                allmodules = Fin_Modules_List.objects.get(company_id=com.id, status='New')
+                
+                cust = Fin_Customers.objects.filter(Company=com.id, status='Active')
+                itms = Fin_Items.objects.filter(Company=com.id, status='Active')
+                units = Fin_Units.objects.filter(Company=com.id)
+                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com.id).order_by('account_name')
+                lst = Fin_Price_List.objects.filter(Company=com.id, status='Active')
+                
+                trms = Fin_Company_Payment_Terms.objects.filter(Company = com.id)
+
+
+            latest_eway = Fin_Delivery_Challan.objects.filter(Company=com).order_by('-reference_no').first()
+
+            new_number = int(latest_eway.reference_no) + 1 if latest_eway else 1
+
+            if Fin_Delivery_Challan_Reference.objects.filter(Company=com).exists():
+                deleted = Fin_Delivery_Challan_Reference.objects.filter(Company=com).last()
+                
+                if deleted:
+                    while int(deleted.reference_number) >= new_number:
+                        new_number += 1
+
+            nxtEway = ""
+            lastEway = Fin_Delivery_Challan.objects.filter(Company=com).last()
+            if lastEway:
+                eway_no = str(lastEway.challan_no)
+                numbers = []
+                stri = []
+                for word in eway_no:
+                    if word.isdigit():
+                        numbers.append(word)
+                    else:
+                        stri.append(word)
+
+                num = ''.join(numbers)
+                st = ''.join(stri)
+
+                eway_num = int(num) + 1
+
+                if num[0] == '0':
+                    nxtEway = st + '0' + str(eway_num)
+                else:
+                    nxtEway = st + str(eway_num)
+
+            context = {
+                'com': cmp,
+                'LoginDetails': data,
+                'allmodules': allmodules,
+                'data': data,
+                'com':com,
+                
+                'customers': cust,
+                'items': itms,
+                'lst': lst,
+                'ESTNo':nxtEway,
+              
+                'pTerms':trms,
+                'accounts':acc,
+                'units':units,
+                'ref_no':new_number
+            }
+            return render(request, 'company/Fin_add_delivery_challan.html', context)
+        except Fin_Login_Details.DoesNotExist:
+            return redirect('/')
+    return redirect('newdeliverychallan')
