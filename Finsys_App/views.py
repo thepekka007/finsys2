@@ -7354,7 +7354,7 @@ def Fin_getCustomers(request):
             com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
 
         options = {}
-        option_objects = Fin_Customers.objects.filter(Company = com, status = 'Active')
+        option_objects = Fin_Customers.objects.filter(Company = com)
         for option in option_objects:
             options[option.id] = [option.id , option.title, option.first_name, option.last_name]
 
@@ -18369,7 +18369,7 @@ def newdeliverychallan(request):
                 itms = Fin_Items.objects.filter(Company=com.id, status='Active')
                 units = Fin_Units.objects.filter(Company=com.id)
                 acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com.id).order_by('account_name')
-                lst = Fin_Price_List.objects.filter(Company=com.id, status='Active')
+                lst = Fin_Price_List.objects.filter(Company=com.id, status='Active',type='Sales')
                 
                 trms = Fin_Company_Payment_Terms.objects.filter(Company = com.id)
 
@@ -18555,126 +18555,7 @@ def customerdata(request):
         return JsonResponse(data7)
 
 
-def createdeliverychallan(request):
-    if 's_id' in request.session:
-        s_id = request.session['s_id']
-        data = Fin_Login_Details.objects.get(id = s_id)
-        if data.User_Type == "Company":
-            com = Fin_Company_Details.objects.get(Login_Id = s_id)
-        else:
-            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
 
-        if request.method == 'POST':
-            CHNo = request.POST['challan_no']
-
-            PatternStr = []
-            for word in CHNo:
-                if word.isdigit():
-                    pass
-                else:
-                    PatternStr.append(word)
-            
-            pattern = ''
-            for j in PatternStr:
-                pattern += j
-
-            pattern_exists = checkEstimateNumberPattern(pattern)
-
-            if pattern !="" and pattern_exists:
-                res = f'<script>alert("Challan No. Pattern already Exists.! Try another!");window.history.back();</script>'
-                return HttpResponse(res)
-
-            if Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = CHNo).exists():
-                res = f'<script>alert("Estimate Number `{CHNo}` already exists, try another!");window.history.back();</script>'
-                return HttpResponse(res)
-
-            challan = Fin_Delivery_Challan(
-                Company = com,
-                LoginDetails = com.Login_Id,
-                Customer = None if request.POST['customer'] == "" else Fin_Customers.objects.get(id = request.POST['customer']),
-                customer_email = request.POST['customerEmail'],
-                billing_address = request.POST['bill_address'],
-                gst_type = request.POST['gst_type'],
-                gstin = request.POST['gstin'],
-                place_of_supply = request.POST['place_of_supply'],
-                reference_no = request.POST['reference_number'],
-                challan_no = CHNo,
-                challan_type= request.POST['challan_type'],
-                
-                challan_date = request.POST['challan_date'],
-                # document= request.POST['file'],
-                
-                subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal']),
-                igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst']),
-                cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst']),
-                sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst']),
-                tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount']),
-                adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj']),
-                shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship']),
-                grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal']),
-                note = request.POST['note']
-            )
-
-            challan.save()
-            challanref = Fin_Delivery_Challan_Reference(
-                Company = com,
-                LoginDetails = com.Login_Id,
-                
-                reference_number = request.POST['reference_number'],
-                
-            )
-
-            challanref.save()
-
-
-
-            if len(request.FILES) != 0:
-                challan.document=request.FILES.get('file')
-            challan.save()
-
-            if 'Draft' in request.POST:
-                challan.status = "Draft"
-            elif "Save" in request.POST:
-                challan.status = "Saved" 
-            challan.save()
-
-            # Save Estimate items.
-
-            itemId = request.POST.getlist("item_id[]")
-            itemName = request.POST.getlist("item_name[]")
-            hsn  = request.POST.getlist("hsn[]")
-            qty = request.POST.getlist("qty[]")
-            price = request.POST.getlist("price[]")
-            tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.State else request.POST.getlist("taxIGST[]")
-            discount = request.POST.getlist("discount[]")
-            total = request.POST.getlist("total[]")
-
-            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total) and itemId and itemName and hsn and qty and price and tax and discount and total:
-                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total)
-                mapped = list(mapped)
-                for ele in mapped:
-                    itm = Fin_Items.objects.get(id = int(ele[0]))
-                    created_instance = Fin_Delivery_Challan_Items.objects.create(delivery_challan = challan, items = itm, hsn = ele[2], quantity = int(ele[3]),  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
-                    # itm.current_stock -= int(ele[3])
-                    created_instance.save()
-                    # itm.save()
-            
-            # Save transaction
-                    
-            Fin_Delivery_Challan_History.objects.create(
-                Company = com,
-                LoginDetails = data,
-                delivery_challan = challan,
-                
-               
-                action = 'Created'
-            )
-
-            return redirect(deliverylist)
-        else:
-            return redirect(deliverylist)
-    else:
-       return redirect('/')
 
 
 def challan_overview(request, id):
@@ -19581,3 +19462,130 @@ def newdeliverychallan(request):
         except Fin_Login_Details.DoesNotExist:
             return redirect('/')
     return redirect('newdeliverychallan')
+
+
+
+
+# update 2
+
+def createdeliverychallan(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+
+        if request.method == 'POST':
+            CHNo = request.POST['challan_no']
+
+            PatternStr = []
+            for word in CHNo:
+                if word.isdigit():
+                    pass
+                else:
+                    PatternStr.append(word)
+            
+            pattern = ''
+            for j in PatternStr:
+                pattern += j
+
+            pattern_exists = checkEstimateNumberPattern(pattern)
+
+            if pattern !="" and pattern_exists:
+                res = f'<script>alert("Challan No. Pattern already Exists.! Try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            if Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = CHNo).exists():
+                res = f'<script>alert("Estimate Number `{CHNo}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            challan = Fin_Delivery_Challan(
+                Company = com,
+                LoginDetails = com.Login_Id,
+                Customer = None if request.POST['customer'] == "" else Fin_Customers.objects.get(id = request.POST['customer']),
+                customer_email = request.POST['customerEmail'],
+                billing_address = request.POST['bill_address'],
+                gst_type = request.POST['gst_type'],
+                gstin = request.POST['gstin'],
+                place_of_supply = request.POST['place_of_supply'],
+                reference_no = request.POST['reference_number'],
+                challan_no = CHNo,
+                challan_type= request.POST['challan_type'],
+                
+                challan_date = request.POST['challan_date'],
+                # document= request.POST['file'],
+                
+                subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal']),
+                igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst']),
+                cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst']),
+                sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst']),
+                tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount']),
+                adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj']),
+                shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship']),
+                grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal']),
+                note = request.POST['note']
+            )
+
+            challan.save()
+            challanref = Fin_Delivery_Challan_Reference(
+                Company = com,
+                LoginDetails = com.Login_Id,
+                
+                reference_number = request.POST['reference_number'],
+                
+            )
+
+            challanref.save()
+
+
+
+            if len(request.FILES) != 0:
+                challan.document=request.FILES.get('file')
+            challan.save()
+
+            if 'Draft' in request.POST:
+                challan.status = "Draft"
+            elif "Save" in request.POST:
+                challan.status = "Saved" 
+            challan.save()
+
+            # Save Estimate items.
+
+            itemId = request.POST.getlist("item_id[]")
+            itemName = request.POST.getlist("item_name[]")
+            hsn  = request.POST.getlist("hsn[]")
+            qty = request.POST.getlist("qty[]")
+            price = request.POST.getlist("price[]")
+            tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.State else request.POST.getlist("taxIGST[]")
+            discount = request.POST.getlist("discount[]")
+            total = request.POST.getlist("total[]")
+
+            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total) and itemId and itemName and hsn and qty and price and tax and discount and total:
+                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total)
+                mapped = list(mapped)
+                for ele in mapped:
+                    itm = Fin_Items.objects.get(id = int(ele[0]))
+                    created_instance = Fin_Delivery_Challan_Items.objects.create(delivery_challan = challan, items = itm, hsn = ele[2], quantity = int(ele[3]),  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+                    # itm.current_stock -= int(ele[3])
+                    created_instance.save()
+                    # itm.save()
+            
+            # Save transaction
+                    
+            Fin_Delivery_Challan_History.objects.create(
+                Company = com,
+                LoginDetails = data,
+                delivery_challan = challan,
+                date=timezone.now().date(),
+                
+               
+                action = 'Created'
+            )
+
+            return redirect(deliverylist)
+        else:
+            return redirect(deliverylist)
+    else:
+       return redirect('/')
