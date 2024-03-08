@@ -601,7 +601,11 @@ path('Fin_checkchallanNumber',views.Fin_checkchallanNumber, name='Fin_checkchall
 path('customer_dropdown',views.customer_dropdown, name='customer_dropdown'),
 
 
+ path('Fin_getItems2',views.Fin_getItems2, name='Fin_getItems2'),
 
+
+
+ path('Fin_getInvItemDetails2',views.Fin_getInvItemDetails2, name='Fin_getInvItemDetails2'),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

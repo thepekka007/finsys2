@@ -6940,38 +6940,39 @@ def Fin_getInvItemDetails(request):
             com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
         
         itemName = request.GET['item']
-        priceListId = request.GET['listId']
+        print(itemName)
+        # priceListId = request.GET['listId']
         item = Fin_Items.objects.get(Company = com, name = itemName)
 
-        if priceListId != "":
-            priceList = Fin_Price_List.objects.get(id = int(priceListId))
+        # if priceListId != "":
+        #     priceList = Fin_Price_List.objects.get(id = int(priceListId))
 
-            if priceList.item_rate == 'Customized individual rate':
-                try:
-                    priceListPrice = float(Fin_PriceList_Items.objects.get(Company = com, list = priceList, item = item).custom_rate)
-                except:
-                    priceListPrice = item.selling_price
-            else:
-                mark = priceList.up_or_down
-                percentage = float(priceList.percentage)
-                roundOff = priceList.round_off
+        #     if priceList.item_rate == 'Customized individual rate':
+        #         try:
+        #             priceListPrice = float(Fin_PriceList_Items.objects.get(Company = com, list = priceList, item = item).custom_rate)
+        #         except:
+        #             priceListPrice = item.selling_price
+        #     else:
+        #         mark = priceList.up_or_down
+        #         percentage = float(priceList.percentage)
+        #         roundOff = priceList.round_off
 
-                if mark == 'Markup':
-                    price = float(item.selling_price) + float((item.selling_price) * (percentage/100))
-                else:
-                    price = float(item.selling_price) - float((item.selling_price) * (percentage/100))
+        #         if mark == 'Markup':
+        #             price = float(item.selling_price) + float((item.selling_price) * (percentage/100))
+        #         else:
+        #             price = float(item.selling_price) - float((item.selling_price) * (percentage/100))
 
-                if priceList.round_off != 'Never mind':
-                    if roundOff == 'Nearest whole number':
-                        finalPrice = round(price)
-                    else:
-                        finalPrice = int(price) + float(roundOff)
-                else:
-                    finalPrice = price
+        #         if priceList.round_off != 'Never mind':
+        #             if roundOff == 'Nearest whole number':
+        #                 finalPrice = round(price)
+        #             else:
+        #                 finalPrice = int(price) + float(roundOff)
+        #         else:
+        #             finalPrice = price
 
-                priceListPrice = finalPrice
-        else:
-            priceListPrice = None
+        #         priceListPrice = finalPrice
+        # else:
+        #     priceListPrice = None
 
         context = {
             'status':True,
@@ -6983,7 +6984,7 @@ def Fin_getInvItemDetails(request):
             'tax': True if item.tax_reference == 'taxable' else False,
             'gst':item.intra_state_tax,
             'igst':item.inter_state_tax,
-            'PLPrice':priceListPrice,
+            # 'PLPrice':priceListPrice,
 
         }
         return JsonResponse(context)
@@ -7354,7 +7355,7 @@ def Fin_getCustomers(request):
             com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
 
         options = {}
-        option_objects = Fin_Customers.objects.filter(Company = com)
+        option_objects = Fin_Customers.objects.filter(Company = com, status = 'Active')
         for option in option_objects:
             options[option.id] = [option.id , option.title, option.first_name, option.last_name]
 
@@ -7451,7 +7452,7 @@ def Fin_getItems(request):
         items = {}
         option_objects = Fin_Items.objects.filter(Company = com, status='Active')
         for option in option_objects:
-            items[option.id] = [option.name]
+            items[option.name] = [option.name]
 
         return JsonResponse(items)
     else:
@@ -18343,91 +18344,93 @@ def deliverylist(request):
      
      
 
-def newdeliverychallan(request):
-    if 's_id' in request.session:
-        s_id = request.session['s_id']
-        try:
-            data = Fin_Login_Details.objects.get(id=s_id)
-            if data.User_Type == "Company":
-                com = Fin_Company_Details.objects.get(Login_Id=data)
-                cmp = com
-                allmodules = Fin_Modules_List.objects.get(Login_Id=s_id, status='New')
+# def newdeliverychallan(request):
+#     if 's_id' in request.session:
+#         s_id = request.session['s_id']
+#         try:
+#             data = Fin_Login_Details.objects.get(id=s_id)
+#             if data.User_Type == "Company":
+#                 com = Fin_Company_Details.objects.get(Login_Id=data)
+#                 cmp = com
+#                 allmodules = Fin_Modules_List.objects.get(Login_Id=s_id, status='New')
                 
-                cust = Fin_Customers.objects.filter(Company=com, status='Active')
-                itms = Fin_Items.objects.filter(Company=com, status='Active')
-                units = Fin_Units.objects.filter(Company=com)
-                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com).order_by('account_name')
-                lst = Fin_Price_List.objects.filter(Company=com, status='Active')
+#                 cust = Fin_Customers.objects.filter(Company=com, status='Active')
+#                 itms = Fin_Items.objects.filter(Company=com, status='Active')
+#                 units = Fin_Units.objects.filter(Company=com)
+#                 acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com).order_by('account_name')
+#                 lst = Fin_Price_List.objects.filter(Company=com, status='Active')
                 
-                trms = Fin_Company_Payment_Terms.objects.filter(Company = com)
-            else:
-                com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
-                cmp = com
-                allmodules = Fin_Modules_List.objects.get(company_id=com.id, status='New')
+#                 trms = Fin_Company_Payment_Terms.objects.filter(Company = com)
+#             else:
+#                 com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+#                 cmp = com
+#                 allmodules = Fin_Modules_List.objects.get(company_id=com.id, status='New')
                 
-                cust = Fin_Customers.objects.filter(Company=com.id, status='Active')
-                itms = Fin_Items.objects.filter(Company=com.id, status='Active')
-                units = Fin_Units.objects.filter(Company=com.id)
-                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com.id).order_by('account_name')
-                lst = Fin_Price_List.objects.filter(Company=com.id, status='Active',type='Sales')
+#                 cust = Fin_Customers.objects.filter(Company=com.id, status='Active')
+#                 itms = Fin_Items.objects.filter(Company=com.id, status='Active')
+#                 units = Fin_Units.objects.filter(Company=com.id)
+#                 acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com.id).order_by('account_name')
+#                 lst = Fin_Price_List.objects.filter(Company=com.id, status='Active')
                 
-                trms = Fin_Company_Payment_Terms.objects.filter(Company = com.id)
+#                 trms = Fin_Company_Payment_Terms.objects.filter(Company = com.id)
 
 
-            latest_eway = Fin_Delivery_Challan.objects.filter(Company=com).order_by('-reference_no').first()
+#             latest_eway = Fin_Delivery_Challan.objects.filter(Company=com).order_by('-reference_no').first()
 
-            new_number = int(latest_eway.reference_no) + 1 if latest_eway else 1
+#             new_number = int(latest_eway.reference_no) + 1 if latest_eway else 1
 
-            if Fin_Delivery_Challan_Reference.objects.filter(Company=com).exists():
-                deleted = Fin_Delivery_Challan_Reference.objects.filter(Company=com).last()
+#             if Fin_Delivery_Challan_Reference.objects.filter(Company=com).exists():
+#                 deleted = Fin_Delivery_Challan_Reference.objects.filter(Company=com).last()
                 
-                if deleted:
-                    while int(deleted.reference_number) >= new_number:
-                        new_number += 1
+#                 if deleted:
+#                     while int(deleted.reference_number) >= new_number:
+#                         new_number += 1
 
-            nxtEway = ""
-            lastEway = Fin_Delivery_Challan.objects.filter(Company=com).last()
-            if lastEway:
-                eway_no = str(lastEway.challan_no)
-                numbers = []
-                stri = []
-                for word in eway_no:
-                    if word.isdigit():
-                        numbers.append(word)
-                    else:
-                        stri.append(word)
+#             nxtEway = ""
+#             lastEway = Fin_Delivery_Challan.objects.filter(Company=com).last()
+#             if lastEway:
+#                 eway_no = str(lastEway.challan_no)
+#                 print(eway_no)
+#                 print("yy")
+#                 numbers = []
+#                 stri = []
+#                 for word in eway_no:
+#                     if word.isdigit():
+#                         numbers.append(word)
+#                     else:
+#                         stri.append(word)
 
-                num = ''.join(numbers)
-                st = ''.join(stri)
+#                 num = ''.join(numbers)
+#                 st = ''.join(stri)
 
-                eway_num = int(num) + 1
+#                 eway_num = int(num) + 1
 
-                if num[0] == '0':
-                    nxtEway = st + '0' + str(eway_num)
-                else:
-                    nxtEway = st + str(eway_num)
+#                 if num[0] == '0':
+#                     nxtEway = st + '0' + str(eway_num)
+#                 else:
+#                     nxtEway = 'st + str(eway_num)'
 
-            context = {
-                'com': cmp,
-                'LoginDetails': data,
-                'allmodules': allmodules,
-                'data': data,
-                'com':com,
+#             context = {
+#                 'com': cmp,
+#                 'LoginDetails': data,
+#                 'allmodules': allmodules,
+#                 'data': data,
+#                 'com':com,
                 
-                'customers': cust,
-                'items': itms,
-                'lst': lst,
-                'ESTNo':nxtEway,
+#                 'customers': cust,
+#                 'items': itms,
+#                 'lst': lst,
+#                 'ESTNo':nxtEway,
               
-                'pTerms':trms,
-                'accounts':acc,
-                'units':units,
-                'ref_no':new_number
-            }
-            return render(request, 'company/Fin_add_delivery_challan.html', context)
-        except Fin_Login_Details.DoesNotExist:
-            return redirect('/')
-    return redirect('newdeliverychallan')
+#                 'pTerms':trms,
+#                 'accounts':acc,
+#                 'units':units,
+#                 'ref_no':new_number
+#             }
+#             return render(request, 'company/Fin_add_delivery_challan.html', context)
+#         except Fin_Login_Details.DoesNotExist:
+#             return redirect('/')
+#     return redirect('newdeliverychallan')
     
 
 
@@ -19218,40 +19221,56 @@ def Fin_checkchallanNumber(request):
 
         nxtEstNo = ""
         lastEstmate = Fin_Delivery_Challan.objects.filter(Company = com).last()
+        # lastEstmate = Fin_Delivery_Challan.objects.filter(Company=com).last()
         if lastEstmate:
-            Est_no = str(lastEstmate.challan_no)
-            numbers = []
-            stri = []
-            for word in Est_no:
-                if word.isdigit():
-                    numbers.append(word)
-                else:
-                    stri.append(word)
+                eway_no = str(lastEstmate.challan_no)
+                print("Original eway_no:", eway_no)
+
+                for i in range(len(eway_no) - 1, -1, -1):
+                    if eway_no[i].isdigit():
+                        # Increment the last digit by 1
+                        new_digit = str((int(eway_no[i]) + 1) % 10)
+
+                        # Replace the last digit in the input string
+                        result = eway_no[:i] + new_digit + eway_no[i+1:]
+                        print("Modified eway_no:", result)
+
+                        # Break out of the loop after updating the last digit
+                        break
+        # if lastEstmate:
+        #     Est_no = str(lastEstmate.challan_no)
+        #     numbers = []
+        #     stri = []
+        #     for word in Est_no:
+        #         if word.isdigit():
+        #             numbers.append(word)
+        #         else:
+        #             stri.append(word)
             
-            num=''
-            for i in numbers:
-                num +=i
+        #     num=''
+        #     for i in numbers:
+        #         num +=i
             
-            st = ''
-            for j in stri:
-                st = st+j
+        #     st = ''
+        #     for j in stri:
+        #         st = st+j
 
-            est_num = int(num)+1
+            # est_num = int(num)+1
 
-            if num[0] == '0':
-                if est_num <10:
-                    nxtEstNo = st+'0'+ str(est_num)
-                else:
-                    nxtEstNo = st+ str(est_num)
-            else:
-                nxtEstNo = st+ str(est_num)
+            # if num[0] == '0':
+            #     if est_num <10:
+            #         nxtEstNo = st+'0'+ str(est_num)
+            #     else:
+            #         nxtEstNo = st+ str(est_num)
+            # else:
+        nxtEstNo = result
 
-        PatternStr = []
-        for word in EstNo:
-            if word.isdigit():
-                pass
-            else:
-                PatternStr.append(word)
+        PatternStr = result
+        # for word in EstNo:
+        #     if word.isdigit():
+        #         pass
+        #     else:
+        #         PatternStr.append(word)
         
         pattern = ''
         for j in PatternStr:
@@ -19423,23 +19442,44 @@ def newdeliverychallan(request):
             lastEway = Fin_Delivery_Challan.objects.filter(Company=com).last()
             if lastEway:
                 eway_no = str(lastEway.challan_no)
+                print("Original eway_no:", eway_no)
+
+                for i in range(len(eway_no) - 1, -1, -1):
+                    if eway_no[i].isdigit():
+                        # Increment the last digit by 1
+                        new_digit = str((int(eway_no[i]) + 1) % 10)
+
+                        # Replace the last digit in the input string
+                        result = eway_no[:i] + new_digit + eway_no[i+1:]
+                        print("Modified eway_no:", result)
+
+                        # Break out of the loop after updating the last digit
+                        break
+
                 numbers = []
                 stri = []
-                for word in eway_no:
-                    if word.isdigit():
-                        numbers.append(word)
-                    else:
-                        stri.append(word)
 
-                num = ''.join(numbers)
-                st = ''.join(stri)
 
-                eway_num = int(num) + 1
 
-                if num[0] == '0':
-                    nxtEway = st + '0' + str(eway_num)
-                else:
-                    nxtEway = st + str(eway_num)
+
+                # for word in eway_no:
+                #     if word.isdigit():
+                #         numbers.append(word)
+                #     else:
+                #         stri.append(word)
+
+                # num = ''.join(numbers)
+                # print(num)
+                # st = ''.join(stri)
+                # print(st)
+
+                # eway_num = int(num) + 1
+                
+                # print(eway_num)
+                # if num[0] == '0':
+                #     nxtEway = st + '0' + str(eway_num)
+                # else:
+                nxtEway = result
 
             context = {
                 'com': cmp,
@@ -19587,5 +19627,90 @@ def createdeliverychallan(request):
             return redirect(deliverylist)
         else:
             return redirect(deliverylist)
+    else:
+       return redirect('/')
+
+
+
+
+def Fin_getItems2(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id=s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+
+        items = {}
+        option_objects = Fin_Items.objects.filter(Company = com, status='Active')
+        for option in option_objects:
+            items[option.name] = [option.name]
+
+        return JsonResponse(items)
+    else:
+        return redirect('/')
+
+
+
+
+def Fin_getInvItemDetails2(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+        
+        itemName = request.GET['item']
+        print(itemName)
+        # priceListId = request.GET['listId']
+        item = Fin_Items.objects.get(Company = com, name = itemName)
+
+        # if priceListId != "":
+        #     priceList = Fin_Price_List.objects.get(id = int(priceListId))
+
+        #     if priceList.item_rate == 'Customized individual rate':
+        #         try:
+        #             priceListPrice = float(Fin_PriceList_Items.objects.get(Company = com, list = priceList, item = item).custom_rate)
+        #         except:
+        #             priceListPrice = item.selling_price
+        #     else:
+        #         mark = priceList.up_or_down
+        #         percentage = float(priceList.percentage)
+        #         roundOff = priceList.round_off
+
+        #         if mark == 'Markup':
+        #             price = float(item.selling_price) + float((item.selling_price) * (percentage/100))
+        #         else:
+        #             price = float(item.selling_price) - float((item.selling_price) * (percentage/100))
+
+        #         if priceList.round_off != 'Never mind':
+        #             if roundOff == 'Nearest whole number':
+        #                 finalPrice = round(price)
+        #             else:
+        #                 finalPrice = int(price) + float(roundOff)
+        #         else:
+        #             finalPrice = price
+
+        #         priceListPrice = finalPrice
+        # else:
+        #     priceListPrice = None
+
+        context = {
+            'status':True,
+            'id': item.id,
+            'hsn':item.hsn,
+            'sales_rate':item.selling_price,
+            'purchase_rate':item.purchase_price,
+            'avl':item.current_stock,
+            'tax': True if item.tax_reference == 'taxable' else False,
+            'gst':item.intra_state_tax,
+            'igst':item.inter_state_tax,
+            # 'PLPrice':priceListPrice,
+
+        }
+        return JsonResponse(context)
     else:
        return redirect('/')
