@@ -19538,9 +19538,9 @@ def createdeliverychallan(request):
                 return HttpResponse(res)
 
             if Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = CHNo).exists():
-                res = f'<script>alert("Estimate Number `{CHNo}` already exists, try another!");window.history.back();</script>'
+                res = f'<script>alert("Challan Number `{CHNo}` already exists, try another!");window.history.back();</script>'
                 return HttpResponse(res)
-
+            
             challan = Fin_Delivery_Challan(
                 Company = com,
                 LoginDetails = com.Login_Id,
@@ -19714,3 +19714,143 @@ def Fin_getInvItemDetails2(request):
         return JsonResponse(context)
     else:
        return redirect('/')
+
+
+
+def editchallan(request,id):
+     if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+        est = Fin_Delivery_Challan.objects.get(id = id)
+        if request.method == 'POST':
+            ESTNo = request.POST['challan_no']
+
+            PatternStr = []
+            for word in ESTNo:
+                if word.isdigit():
+                    pass
+                else:
+                    PatternStr.append(word)
+            
+            pattern = ''
+            for j in PatternStr:
+                pattern += j
+
+            pattern_exists = checkEstimateNumberPattern(pattern)
+
+            if pattern !="" and pattern_exists:
+                res = f'<script>alert("Challan No. Pattern already Exists.! Try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            if est.challan_no != ESTNo and Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = ESTNo).exists():
+                res = f'<script>alert("Challan Number `{ESTNo}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            est.Customer = None if request.POST['customer'] == "" else Fin_Customers.objects.get(id = request.POST['customer'])
+            est.customer_email = request.POST['customerEmail']
+            est.billing_address = request.POST['bill_address']
+            est.gst_type = request.POST['gst_type']
+            est.gstin = request.POST['gstin']
+            est.place_of_supply = request.POST['place_of_supply']
+
+            est.challan_no = ESTNo
+           
+            est.challan_date = request.POST['challan_date']
+            est.challan_type = request.POST['challan_type']
+           
+
+            est.subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal'])
+            # est.igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst'])
+            # est.cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst'])
+            # est.sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst'])
+            est.tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount'])
+            est.adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj'])
+            est.shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship'])
+            est.grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal'])
+
+            est.note = request.POST['note']
+
+            if len(request.FILES) != 0:
+                est.file=request.FILES.get('file')
+
+            est.save()
+
+            # Save estimate items.
+
+            itemId = request.POST.getlist("item_id[]")
+            itemName = request.POST.getlist("item_name[]")
+            print(itemName)
+            hsn  = request.POST.getlist("hsn[]")
+            qty = request.POST.getlist("qty[]")
+            price = request.POST.getlist("price[]")
+            plc=request.POST['place_of_supply']
+
+            cgst=request.POST.getlist("taxGST[]")
+            igst=request.POST.getlist("taxIGST[]")
+
+            if plc!=com.State:
+                    tax = igst
+                    est.igst = float(request.POST['igst'])
+                    est.cgst = 0
+                    est.sgst = 0
+                    est.save()
+
+            if plc==com.State:
+                    tax = cgst
+                    est.igst = 0
+                    est.cgst = float(request.POST['cgst'])
+                    est.sgst = float(request.POST['sgst'])
+                    d = float(request.POST['cgst'])
+                   
+                    est.save()
+
+             
+
+            # tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.State else request.POST.getlist("taxIGST[]")
+            discount = request.POST.getlist("discount[]")
+            total = request.POST.getlist("total[]")
+            est_item_ids = request.POST.getlist("id[]")
+            EstItem_ids = [int(id) for id in est_item_ids]
+
+            estimate_items = Fin_Delivery_Challan_Items.objects.filter(delivery_challan = est)
+            object_ids = [obj.id for obj in estimate_items]
+
+            ids_to_delete = [obj_id for obj_id in object_ids if obj_id not in EstItem_ids]
+
+            Fin_Delivery_Challan_Items.objects.filter(id__in=ids_to_delete).delete()
+            
+            count = Fin_Delivery_Challan_Items.objects.filter(delivery_challan = est).count()
+
+            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total)==len(EstItem_ids) and EstItem_ids and itemId and itemName and hsn and qty and price and tax and discount and total:
+                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total,EstItem_ids)
+                mapped = list(mapped)
+                for ele in mapped:
+                    if int(len(itemId))>int(count):
+                        if ele[8] == 0:
+                            itm = Fin_Items.objects.get(id = int(ele[0]))
+                            Fin_Delivery_Challan_Items.objects.create(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+                        else:
+                            itm = Fin_Items.objects.get(id = int(ele[0]))
+                            Fin_Delivery_Challan_Items.objects.filter( id = int(ele[8])).update(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+                    else:
+                        itm = Fin_Items.objects.get(id = int(ele[0]))
+                        Fin_Delivery_Challan_Items.objects.filter( id = int(ele[8])).update(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+            
+            # Save transaction
+                    
+            Fin_Delivery_Challan_History.objects.create(
+                Company = com,
+                LoginDetails = data,
+                delivery_challan = est,
+                date=timezone.now().date(),
+                action = 'Edited'
+            )
+
+            return redirect(challan_overview, id)
+        else:
+            return redirect(challan_overview, id)
+   

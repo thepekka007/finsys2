@@ -29,7 +29,7 @@
 <span class="d-flex justify-content-end p-2" style="cursor: pointer;" onclick="window.location.href=`{% url 'deliverylist' %}`"><i class="fa fa-times-circle text-white" style="font-size: 1.2rem;"></i></span>
 <form action="{% url 'editchallan' estimate.id %}" method="post" class="needs-validation" enctype="multipart/form-data" onsubmit="return validateForm()">
   {% csrf_token %}
-  <div class="page-content">
+  <div class="page-content" onmouseover="refreshTax()">
     <div class="card radius-15">
       <div class="card-body">
         <div class="card-title">
@@ -223,10 +223,10 @@
                 <div class="col-md-4 mt-3">
                     <label class="">Challan Type </label>
                     <div class="d-flex">
-                        <select class="form-control" name="challan_type" style="background-color: #43596c; color: white;" id="paymentTerm" required>
-                            <option value="" selected> {{estimate.challan_type}} </option>
+                        <select class="form-control" name="challan_type" style="background-color: #43596c; color: white;" id="" required>
+                            <!-- <option value="" selected> {{estimate.challan_type}} </option> -->
                         
-                            <option value="Supply Of Liquid Gas" style="background-color: #294f76;"  {% if estimate.challan_type == "Supply Of Liquid Gas" %}Selected{% endif %} >Supply Of Liquid Gas </option>
+                            <option value="Supply Of Liquid Gas"   {% if estimate.challan_type == 'Supply Of Liquid Gas' %}Selected{% endif %} >Supply Of Liquid Gas </option>
                             <option value="Job Work" style="background-color: #294f76;"   {% if estimate.challan_type == "Job Work" %}Selected{% endif %}>Job Work </option>
                             <option value="Supply Of Approval" style="background-color: #294f76;"   {% if estimate.challan_type == "Supply Of Approval" %}Selected{% endif %}>Supply Of Approval </option>
                             <option value="Others" style="background-color: #294f76;"   {% if estimate.challan_type == "Others" %}Selected{% endif %}>Others  </option>
@@ -434,8 +434,8 @@
                     </div>
                 </div>
                 <div class="col-md-5 mt-3 d-flex">
-                    <input type="submit" class="btn btn-outline-secondary w-50 text-light" value="SAVE">
-                    <input type="button" class="btn btn-outline-secondary w-50 ml-1 text-light" value="CANCEL" onclick="window.location.href=`{% url 'Fin_viewEstimate' estimate.id %}`">
+                    <input type="submit" class="btn btn-outline-secondary w-50 text-light" value="SAVE" onclick="window.location.href=`{% url 'challan_overview' estimate.id %}`">
+                    <input type="button" class="btn btn-outline-secondary w-50 ml-1 text-light" value="CANCEL" onclick="window.location.href=`{% url 'challan_overview' estimate.id %}`">
                 </div>
             </div>
             <div class="notices mt-3">

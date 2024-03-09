@@ -343,10 +343,10 @@
                                     <div class="d-flex">
                                         <div class="w-100">
                                             <div class="p-0 border-0 bg-none position-relative drop-box" style="display: block;">
-                                                <select  class="form-control" name="customer" id="item1" onchange="onchangeitem(this)" style="width: 93%;">
+                                                <select  class="form-control previousSelector item-display" name="item_name[]" id="item1" onchange="onchangeitem(this)" style="width: 93%;">
                                                     <option value="0">Select item</option>
                                     {% for cust in items %}
-                                    <option value="{{ cust.name }}"> {{ cust.name}}</option>
+                                    <option value="{{ cust.name }}" class=""> {{ cust.name}}</option>
                                     {% endfor %}
                                 </select>
                                 <script>
@@ -369,7 +369,29 @@
                                         var customer = selectElement.value;
                                         console.log(customer)
                                         var n = selectElement.id.slice(4);
+                                        // id(customer==)
                                         console.log(n+"h")
+                                        var plc = $('#placeOfSupply').val();
+                                        // var PLId = $('#customerPriceListId').val();
+                                        var exists = false;
+                                        var previousValues = [];
+                                        // var itemName = customer;
+                                
+                                            // var html = $(this).html();
+                                            $('.item-display').each(function() {
+        var itemName = $(this).val();
+        console.log(itemName + " prev");
+        if (itemName == customer && $(this).attr('id') !== selectElement.id) {
+            exists = true;
+            console.log('exists', exists);
+        }
+    });
+                                            
+                                  
+                                            
+                                     
+                                        if(!exists){
+                                        if(plc != ""){
                                         $.ajax({
                                           type: "GET",
                                           url: "{% url 'Fin_getInvItemDetails2' %}",
@@ -413,6 +435,12 @@
                                                 
                                          
                                         });
+                                    }else{
+                    alert('Select Place of Supply.!')
+                }
+            }else{
+            alert('Item already exists in the Challan, choose another or change quantity.!')
+        }
                                       }
                                     // })
                                     // });
@@ -427,7 +455,7 @@
                                             </div>
                                         </div>
                                         <a href="#">
-                                            <button type="button" class="btn btn-outline-secondary ml-1" data-target="#newItem" data-toggle="modal">+</button>
+                                            <button type="button" class="btn btn-outline-secondary ml-1" data-target="#newItem" onclick="reloadItems()" id="new1" data-toggle="modal">+</button>
                                         </a>
                                     </div>
                                 <script>
@@ -462,6 +490,7 @@
         console.log(qty)
         var avl_val = parseInt(document.getElementById(`avl${id_val}`).value);
         console.log(avl_val+"jj")
+        if (avl_val !=0){
         if (qty > avl_val) {
             alert("Quantity Greater than Available Quantity");
             document.getElementById(id).value = avl_val;
@@ -472,6 +501,7 @@
             $("#qtyspan"+id_val).val("Available qty :"+ c);
             // document.getElementById(`qtyspan${id_val}`).textContent = c;
         }
+    }
     }
 
     $(document).ready(function(){
@@ -520,7 +550,7 @@
                             </tr>
                         </tbody>
                         <tr>
-                            <td style="border: none;"><a class="btn btn-outline-secondary ml-1" role="button" id="add" >+</a></td>
+                            <td style="border: none;"><a class="btn btn-outline-secondary ml-1" role="button" onclick="reloadItems()" id="add" >+</a></td>
                         </tr>
                     </table>
                 </div>
@@ -2310,8 +2340,8 @@ $(document).ready(function(){
                 <div class="d-flex">
                     <div class="w-100">
                         <div class="p-0 border-0 bg-none position-relative drop-box" style="display: block;">
-                            <select  class="form-control" name="customer" id="item${roinc}"  onchange="onchangeitem(this)" style="width: 93%;">
-                                                    <option value="0">Select Customer</option>
+                            <select  class="form-control previousSelector item-display" name="item_name[]" id="item${roinc}"  onchange="onchangeitem(this)" style="width: 93%;">
+                                                    <option value="0">Select Items</option>
                                     {% for cust in items %}
                                     <option value="{{ cust.name }}"> {{ cust.name}}</option>
                                     {% endfor %}
@@ -2320,7 +2350,7 @@ $(document).ready(function(){
                         </div>
                     </div>
                     <a href="#">
-                        <button type="button" class="btn btn-outline-secondary ml-1" data-target="#newItem" data-toggle="modal">+</button>
+                        <button type="button" class="btn btn-outline-secondary ml-1" data-target="#newItem" id="new${roinc}" data-toggle="modal">+</button>
                     </a>
                 </div>
             
@@ -3286,38 +3316,70 @@ $(document).on("click","#saveNewItem",function(){
         return;
     }
 });
-
 function reloadItems() {
+    // Store selected values
+    var selectedValues = {};
+    for (var i = 1; i <= 100; i++) {
+        var dropdown = $('#item' + i);
+        selectedValues[i] = dropdown.val();
+    }
+
     $.ajax({
         url: "{% url 'Fin_getItems2' %}",
-
         type: "GET",
-      dataType: "json",
-      data: $(this).serialize(),
-      csrfmiddlewaretoken: '{{ csrf_token }}',
+        dataType: "json",
+        data: $(this).serialize(),
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        success: function (data) {
+            console.log("success2");
+            for (var i = 1; i <= 100; i++) {
+                var dropdown = $('#item' + i);
+                dropdown.empty();
+
+                $.each(data, function (key, value) {
+                    dropdown.append($('<option></option>').attr('value', key).text(value));
+                    console.log("emp load");
+                });
+
+                // Set back the selected value
+                dropdown.val(selectedValues[i]);
+            }
+        },
+    });
+
+
+
+// function reloadItems() {
+//     $.ajax({
+//         url: "{% url 'Fin_getItems2' %}",
+
+//         type: "GET",
+//       dataType: "json",
+//       data: $(this).serialize(),
+//       csrfmiddlewaretoken: '{{ csrf_token }}',
     
-      success: function(data) {
-          console.log("success2")
-          n=0
-          for (var i = 0; i < 100; i++) {
-            n=n+1
-            console.log(n)
-    var dropdown = $('#item'+n);
-    // Your code inside the loop for each iteration
+//       success: function(data) {
+//           console.log("success2")
+//           n=0
+//           for (var i = 0; i < 100; i++) {
+//             n=n+1
+//             console.log(n)
+//     var dropdown = $('#item'+n);
+//     // Your code inside the loop for each iteration
 
 
-        dropdown.empty();
+//         dropdown.empty();
   
         
-        $.each(data, function(key, value) {
+//         $.each(data, function(key, value) {
      
-            dropdown.append($('<option></option>').attr('value', key).text(value));
-            console.log("emp load");
-        });
-    }
-      },
+//             dropdown.append($('<option></option>').attr('value', key).text(value));
+//             console.log("emp load");
+//         });
+//     }
+//       },
    
-    });
+//     });
         // type: "GET",
         // dataType: "json",
         // data: {},
