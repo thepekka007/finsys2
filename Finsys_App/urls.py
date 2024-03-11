@@ -606,6 +606,20 @@ path('customer_dropdown',views.customer_dropdown, name='customer_dropdown'),
 
 
  path('Fin_getInvItemDetails2',views.Fin_getInvItemDetails2, name='Fin_getInvItemDetails2'),
+
+
+
+
+ #debit
+
+ path('Fin_debitnotelist', views.Fin_debitnotelist, name='Fin_debitnotelist'),
+  path('Fin_debitnoteadd', views.Fin_debitnoteadd, name='Fin_debitnoteadd'),
+  path('vendordata', views.vendordata, name='vendordata'),
+  path('Fin_newdebitnote', views.Fin_newdebitnote, name='Fin_newdebitnote'),
+path('Fin_checkdebitNumber',views.Fin_checkdebitNumber, name='Fin_checkdebitNumber'),
+
+path('billdata', views.billdata, name='billdata'),
+  
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
