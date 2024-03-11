@@ -285,7 +285,7 @@
                                     <div class="d-flex">
                                         <div class="w-100">
                                             <div class="p-0 border-0 bg-none position-relative drop-box" style="display: block;">
-                                                <input required type="text" id="item{{forloop.counter}}" value="{{itm.items.name}}" name="item_name[]" class="dropdown-toggle form-control item-display" onmouseover="onchangeitem(this)" onkeyup="filterFunction($(this).attr('id'))"  data-toggle="dropdown" aria-expanded="false" placeholder="Items.." autocomplete="off">
+                                                <input required type="text" id="item{{forloop.counter}}" value="{{itm.items.name}}" name="item_name[]" class="dropdown-toggle form-control item-display" onkeyup="filterFunction($(this).attr('id'))"  data-toggle="dropdown" aria-expanded="false" placeholder="Items.." autocomplete="off">
                                                 <ul class="dropdown-menu w-100 items-available position-absolute" id="menu{{forloop.counter}}"  style="overflow-y: auto; height: fit-content;max-height: 40vh;"> 
                                                     {% for i in items %}
                                                     <li class="dropdown-item items-options" style="cursor: pointer;" onclick="getItemDetails($(this).parent().prev().attr('id'),`{{i.name}}`)">{{i.name}}</li>
@@ -305,82 +305,9 @@
                                     <input type="text" name='hsn[]' id="hsn{{forloop.counter}}" value="{{itm.hsn}}" placeholder='HSN Code' class="form-control HSNCODE" style="background-color: #43596c; color: white;" readonly />
                                 </td>
                                 <td >
-                                    <input type="number" name='qty[]' id="qty{{forloop.counter}}"  class="form-control qty" step=0 min=1 style="background-color: #43596c; color: white;" value={{itm.quantity}}  required/>
-                                    <input type="text" id="avl1" style="display: none;">
-                                    <!-- <div  id="hids" style="display: none;"><span id="dd" style="display: none;">Available Qty :</span><span id="qtyspan1"  class=''></span></div> -->
-                                    <input type="text" id="qtyspan1" value={{itm.items.current_stock}}>
-                               
+                                    <input type="number" name='qty[]' id="qty{{forloop.counter}}"  class="form-control qty" step=0 min=1 style="background-color: #43596c; color: white;" value={{itm.quantity}} required/>
                                 </td>
                                 <td>
-                                    <script>
-                                        // $(document).ready(function() {
-                                        //   // Initialize select2
-                                        //   $('#customer3').select2();
-                                      
-                                          // Handle change event for the 'selected' element
-                                        //   $(document).ready(function() {
-                          // Initialize select2
-                                        //    $('#item1').select2();
-                                        //    $('#placeOfSupply').select2();
-                                         
-                                          function onchangeitem (selectElement) {
-                                            console.log('h')
-                                            // var cc = document.getElementById("item1");
-                                            console.log(selectElement.id);
-    
-    
-                                            var customer = selectElement.value;
-                                            console.log(customer)
-                                            var n = selectElement.id.slice(4);
-                                            // id(customer==)
-                                            console.log(n+"h")
-                                        
-                                            $.ajax({
-                                              type: "GET",
-                                              url: "{% url 'Fin_getInvItemDetails2' %}",
-                                              data: {
-                                                item: customer
-                                                
-                                              },
-                                              
-                                              success: function (response) {
-    
-                                                console.log("hii")
-                                                // $("#itemId"+n).val(response.id);
-                                                // $("#hsn"+n).val(response.hsn);
-                                                // $("#price"+n).val(response.sales_rate);
-                                                // $("#taxGST"+n).val(response.gst);
-                                                // $("#taxIGST"+n).val(response.igst);
-                                                // $("#qty"+n).val(response.avl);
-                                                $("#avl"+n).val(response.avl);
-                         
-                            
-                            abl = response.avl;
-                        console.log(abl);
-    
-                        if (abl !== 0 ) {
-                            $("#qtyspan"+n).show()
-                            console.log("#qtyspan"+n)
-                            $("#qtyspan"+n).val("Available qty :"+ abl);
-    
-                            
-                        
-                        }
-                        else
-                        {
-                            $("#qtyspan"+n).hide()
-                        }
-                                              
-                    }
-                                                    
-                                             
-                                            });
-                                            
-  
-                                          }
-
-                                      </script>            
-                           
                                     <input type="number" name='price[]' id="price{{forloop.counter}}" class="form-control price" step="0.00" min="0" style="background-color: #43596c; color: white; display: block;" value={{itm.items.selling_price}} readonly />
                                 </td>
                                 
@@ -1667,25 +1594,6 @@
                         document.getElementById('price'+n).value = response.sales_rate;
                         document.getElementById('taxGST'+n).value = response.gst;
                         document.getElementById('taxIGST'+n).value = response.igst;
-                        document.getElementById('taxIGST'+n).value = response.igst;
-                        
-                        // document.getElementById(''+n).value = response.avl;
-                        abl = response.avl;
-                    console.log(abl);
-
-                    if (abl !== 0 ) {
-                        $("#qtyspan"+n).show()
-                        $("#qtyspan"+n).val("Available qty :"+ abl);
-
-                        
-                    
-                    }
-                    else
-                    {
-                        $("#qtyspan"+n).hide()
-                    }
-                                          
-                
                         refreshTax();
                         calc();
                     }
@@ -1887,7 +1795,7 @@ $(document).ready(function(){
                 <div class="d-flex">
                     <div class="w-100">
                         <div class="p-0 border-0 bg-none position-relative drop-box" style="display: block;">
-                            <input required type="text" id="item${roinc}"  name="item_name[]" class="dropdown-toggle form-control item-display" onmouseover="onchangeitem(this)" onkeyup="filterFunction($(this).attr('id'))"  data-toggle="dropdown" aria-expanded="false" placeholder="Items.." autocomplete="off">
+                            <input required type="text" id="item${roinc}" value="" name="item_name[]" class="dropdown-toggle form-control item-display" onkeyup="filterFunction($(this).attr('id'))"  data-toggle="dropdown" aria-expanded="false" placeholder="Items.." autocomplete="off">
                             <ul class="dropdown-menu w-100 items-available position-absolute" id="menu${roinc}"  style="overflow-y: auto; height: fit-content;max-height: 40vh;"> 
                                 {% for i in items %}
                                 <li class="dropdown-item items-options" style="cursor: pointer;" onclick="getItemDetails($(this).parent().prev().attr('id'),$(this).html())">{{i.name}}</li>
@@ -1909,10 +1817,7 @@ $(document).ready(function(){
             </td>
             <td >
                 <input type="number" name='qty[]' id="qty${roinc}"  class="form-control qty" step=0 min=1 style="background-color: #43596c; color: white;" value=0 required/>
-                <input type="text" id="avl1" style="display: none;">
-                                  
-                <input type="text" id="qtyspan${roinc}" style="display: none;">
-                </td>
+            </td>
             <td>
                 <input type="number" name='price[]' id="price${roinc}" class="form-control price" step="0.00" min="0" style="background-color: #43596c; color: white;" value=0 readonly />
             </td>
