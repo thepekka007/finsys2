@@ -4,8 +4,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render,redirect
 from django.contrib.auth.models import User, auth
 from . models import *
-# from Finsys_App.models import Fin_Vendors
-
 from django.contrib import messages
 from django.utils.crypto import get_random_string
 from datetime import date
@@ -6942,39 +6940,38 @@ def Fin_getInvItemDetails(request):
             com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
         
         itemName = request.GET['item']
-        print(itemName)
-        # priceListId = request.GET['listId']
+        priceListId = request.GET['listId']
         item = Fin_Items.objects.get(Company = com, name = itemName)
 
-        # if priceListId != "":
-        #     priceList = Fin_Price_List.objects.get(id = int(priceListId))
+        if priceListId != "":
+            priceList = Fin_Price_List.objects.get(id = int(priceListId))
 
-        #     if priceList.item_rate == 'Customized individual rate':
-        #         try:
-        #             priceListPrice = float(Fin_PriceList_Items.objects.get(Company = com, list = priceList, item = item).custom_rate)
-        #         except:
-        #             priceListPrice = item.selling_price
-        #     else:
-        #         mark = priceList.up_or_down
-        #         percentage = float(priceList.percentage)
-        #         roundOff = priceList.round_off
+            if priceList.item_rate == 'Customized individual rate':
+                try:
+                    priceListPrice = float(Fin_PriceList_Items.objects.get(Company = com, list = priceList, item = item).custom_rate)
+                except:
+                    priceListPrice = item.selling_price
+            else:
+                mark = priceList.up_or_down
+                percentage = float(priceList.percentage)
+                roundOff = priceList.round_off
 
-        #         if mark == 'Markup':
-        #             price = float(item.selling_price) + float((item.selling_price) * (percentage/100))
-        #         else:
-        #             price = float(item.selling_price) - float((item.selling_price) * (percentage/100))
+                if mark == 'Markup':
+                    price = float(item.selling_price) + float((item.selling_price) * (percentage/100))
+                else:
+                    price = float(item.selling_price) - float((item.selling_price) * (percentage/100))
 
-        #         if priceList.round_off != 'Never mind':
-        #             if roundOff == 'Nearest whole number':
-        #                 finalPrice = round(price)
-        #             else:
-        #                 finalPrice = int(price) + float(roundOff)
-        #         else:
-        #             finalPrice = price
+                if priceList.round_off != 'Never mind':
+                    if roundOff == 'Nearest whole number':
+                        finalPrice = round(price)
+                    else:
+                        finalPrice = int(price) + float(roundOff)
+                else:
+                    finalPrice = price
 
-        #         priceListPrice = finalPrice
-        # else:
-        #     priceListPrice = None
+                priceListPrice = finalPrice
+        else:
+            priceListPrice = None
 
         context = {
             'status':True,
@@ -6986,7 +6983,7 @@ def Fin_getInvItemDetails(request):
             'tax': True if item.tax_reference == 'taxable' else False,
             'gst':item.intra_state_tax,
             'igst':item.inter_state_tax,
-            # 'PLPrice':priceListPrice,
+            'PLPrice':priceListPrice,
 
         }
         return JsonResponse(context)
@@ -7454,7 +7451,7 @@ def Fin_getItems(request):
         items = {}
         option_objects = Fin_Items.objects.filter(Company = com, status='Active')
         for option in option_objects:
-            items[option.name] = [option.name]
+            items[option.id] = [option.name]
 
         return JsonResponse(items)
     else:
@@ -16802,8 +16799,16 @@ def Fin_bank_transcation_history(request,id):
 def Fin_bank_transaction_delete(request,id):
   transaction = Fin_BankTransactions.objects.get(id=id)
   bank = Fin_Banking.objects.get(id=transaction.banking_id)
-  transfer_to = Fin_BankTransactions.objects.get(id=transaction.bank_to_bank)
-  bank_to = Fin_Banking.objects.get(id=transfer_to.banking_id)
+#   transfer_to = Fin_BankTransactions.objects.get(id=transaction.bank_to_bank)
+  try:
+        transfer_to = Fin_BankTransactions.objects.get(id=transaction.bank_to_bank)
+  except:
+        transfer_to = None
+
+  try:
+        bank_to = Fin_Banking.objects.get(id=transfer_to.banking.id)
+  except:
+        transfer_to = None
 
 
   if transaction.transaction_type=='Cash Withdraw':
@@ -16823,9 +16828,16 @@ def Fin_bank_transaction_delete(request,id):
   else:
     bank.current_balance = bank.current_balance - transaction.amount
   bank.save()
-  bank_to.save()
+  try:
+    bank_to.save()
+  except:
+    bank_to = None
   transaction.delete()
-  transfer_to.delete()
+  try:
+    transfer_to.delete()
+  except:
+    transfer_to = None
+#   transfer_to.delete()
   return redirect('Fin_banking_listout')            
   
   
@@ -18324,9 +18336,9 @@ def stockadjToEmail(request,id):
                 print(e)
                 messages.error(request, f'{e}')
                 return redirect(StockAdjustmentOverview, id)
-
-
-# myyyy
+                
+                
+# Delivery Challan Views TINTO MT 
 def deliverylist(request):
     if 's_id' in request.session:
         s_id = request.session['s_id']
@@ -18345,9 +18357,113 @@ def deliverylist(request):
        return redirect('/')
      
      
+def newdeliverychallan(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        try:
+            data = Fin_Login_Details.objects.get(id=s_id)
+            if data.User_Type == "Company":
+                com = Fin_Company_Details.objects.get(Login_Id=data)
+                cmp = com
+                allmodules = Fin_Modules_List.objects.get(Login_Id=s_id, status='New')
+                
+                cust = Fin_Customers.objects.filter(Company=com, status='Active')
+                itms = Fin_Items.objects.filter(Company=com, status='Active')
+                units = Fin_Units.objects.filter(Company=com)
+                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com).order_by('account_name')
+                lst = Fin_Price_List.objects.filter(Company=com, status='Active')
+                
+                trms = Fin_Company_Payment_Terms.objects.filter(Company = com)
+            else:
+                com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+                cmp = com
+                allmodules = Fin_Modules_List.objects.get(company_id=com.id, status='New')
+                
+                cust = Fin_Customers.objects.filter(Company=com.id, status='Active')
+                itms = Fin_Items.objects.filter(Company=com.id, status='Active')
+                units = Fin_Units.objects.filter(Company=com.id)
+                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com.id).order_by('account_name')
+                lst = Fin_Price_List.objects.filter(Company=com.id, status='Active')
+                
+                trms = Fin_Company_Payment_Terms.objects.filter(Company = com.id)
 
+
+            latest_eway = Fin_Delivery_Challan.objects.filter(Company=com).order_by('-reference_no').first()
+
+            new_number = int(latest_eway.reference_no) + 1 if latest_eway else 1
+
+            if Fin_Delivery_Challan_Reference.objects.filter(Company=com).exists():
+                deleted = Fin_Delivery_Challan_Reference.objects.filter(Company=com).last()
+                
+                if deleted:
+                    while int(deleted.reference_number) >= new_number:
+                        new_number += 1
+
+            nxtEway = ""
+            lastEway = Fin_Delivery_Challan.objects.filter(Company=com).last()
+            if lastEway:
+                eway_no = str(lastEway.challan_no)
+                print("Original eway_no:", eway_no)
+
+                for i in range(len(eway_no) - 1, -1, -1):
+                    if eway_no[i].isdigit():
+                        # Increment the last digit by 1
+                        new_digit = str((int(eway_no[i]) + 1) % 10)
+
+                        # Replace the last digit in the input string
+                        result = eway_no[:i] + new_digit + eway_no[i+1:]
+                        print("Modified eway_no:", result)
+
+                        # Break out of the loop after updating the last digit
+                        break
+
+                numbers = []
+                stri = []
+
+
+
+
+                # for word in eway_no:
+                #     if word.isdigit():
+                #         numbers.append(word)
+                #     else:
+                #         stri.append(word)
+
+                # num = ''.join(numbers)
+                # print(num)
+                # st = ''.join(stri)
+                # print(st)
+
+                # eway_num = int(num) + 1
+                
+                # print(eway_num)
+                # if num[0] == '0':
+                #     nxtEway = st + '0' + str(eway_num)
+                # else:
+                nxtEway = result
+
+            context = {
+                'com': cmp,
+                'LoginDetails': data,
+                'allmodules': allmodules,
+                'data': data,
+                'com':com,
+                
+                'customers': cust,
+                'items': itms,
+                'lst': lst,
+                'ESTNo':nxtEway,
+              
+                'pTerms':trms,
+                'accounts':acc,
+                'units':units,
+                'ref_no':new_number
+            }
+            return render(request, 'company/Fin_add_delivery_challan.html', context)
+        except Fin_Login_Details.DoesNotExist:
+            return redirect('/')
+    return redirect('newdeliverychallan')
     
-
 
 def Fin_getCustomerschallan(request):
     if 's_id' in request.session:
@@ -18473,7 +18589,127 @@ def customerdata(request):
         return JsonResponse(data7)
 
 
+def createdeliverychallan(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
 
+        if request.method == 'POST':
+            CHNo = request.POST['challan_no']
+
+            PatternStr = []
+            for word in CHNo:
+                if word.isdigit():
+                    pass
+                else:
+                    PatternStr.append(word)
+            
+            pattern = ''
+            for j in PatternStr:
+                pattern += j
+
+            pattern_exists = checkEstimateNumberPattern(pattern)
+
+            if pattern !="" and pattern_exists:
+                res = f'<script>alert("Challan No. Pattern already Exists.! Try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            if Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = CHNo).exists():
+                res = f'<script>alert("Challan Number `{CHNo}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+            
+            challan = Fin_Delivery_Challan(
+                Company = com,
+                LoginDetails = com.Login_Id,
+                Customer = None if request.POST['customer'] == "" else Fin_Customers.objects.get(id = request.POST['customer']),
+                customer_email = request.POST['customerEmail'],
+                billing_address = request.POST['bill_address'],
+                gst_type = request.POST['gst_type'],
+                gstin = request.POST['gstin'],
+                place_of_supply = request.POST['place_of_supply'],
+                reference_no = request.POST['reference_number'],
+                challan_no = CHNo,
+                challan_type= request.POST['challan_type'],
+                
+                challan_date = request.POST['challan_date'],
+                # document= request.POST['file'],
+                
+                subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal']),
+                igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst']),
+                cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst']),
+                sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst']),
+                tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount']),
+                adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj']),
+                shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship']),
+                grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal']),
+                note = request.POST['note']
+            )
+
+            challan.save()
+            challanref = Fin_Delivery_Challan_Reference(
+                Company = com,
+                LoginDetails = com.Login_Id,
+                
+                reference_number = request.POST['reference_number'],
+                
+            )
+
+            challanref.save()
+
+
+
+            if len(request.FILES) != 0:
+                challan.document=request.FILES.get('file')
+            challan.save()
+
+            if 'Draft' in request.POST:
+                challan.status = "Draft"
+            elif "Save" in request.POST:
+                challan.status = "Saved" 
+            challan.save()
+
+            # Save Estimate items.
+
+            itemId = request.POST.getlist("item_id[]")
+            itemName = request.POST.getlist("item_name[]")
+            hsn  = request.POST.getlist("hsn[]")
+            qty = request.POST.getlist("qty[]")
+            price = request.POST.getlist("price[]")
+            tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.State else request.POST.getlist("taxIGST[]")
+            discount = request.POST.getlist("discount[]")
+            total = request.POST.getlist("total[]")
+
+            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total) and itemId and itemName and hsn and qty and price and tax and discount and total:
+                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total)
+                mapped = list(mapped)
+                for ele in mapped:
+                    itm = Fin_Items.objects.get(id = int(ele[0]))
+                    created_instance = Fin_Delivery_Challan_Items.objects.create(delivery_challan = challan, items = itm, hsn = ele[2], quantity = int(ele[3]),  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+                    itm.current_stock -= int(ele[3])
+                    created_instance.save()
+                    itm.save()
+            
+            # Save transaction
+                    
+            Fin_Delivery_Challan_History.objects.create(
+                Company = com,
+                LoginDetails = data,
+                delivery_challan = challan,
+                date=timezone.now().date(),
+                
+               
+                action = 'Created'
+            )
+
+            return redirect(deliverylist)
+        else:
+            return redirect(deliverylist)
+    else:
+       return redirect('/')
 
 
 def challan_overview(request, id):
@@ -18504,7 +18740,150 @@ def challan_overview(request, id):
        return redirect('/')
 
 
+def editchallan(request,id):
+     if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+        est = Fin_Delivery_Challan.objects.get(id = id)
+        if request.method == 'POST':
+            ESTNo = request.POST['challan_no']
 
+            PatternStr = []
+            for word in ESTNo:
+                if word.isdigit():
+                    pass
+                else:
+                    PatternStr.append(word)
+            
+            pattern = ''
+            for j in PatternStr:
+                pattern += j
+
+            pattern_exists = checkEstimateNumberPattern(pattern)
+
+            if pattern !="" and pattern_exists:
+                res = f'<script>alert("Challan No. Pattern already Exists.! Try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            if est.challan_no != ESTNo and Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = ESTNo).exists():
+                res = f'<script>alert("Challan Number `{ESTNo}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            est.Customer = None if request.POST['customer'] == "" else Fin_Customers.objects.get(id = request.POST['customer'])
+            est.customer_email = request.POST['customerEmail']
+            est.billing_address = request.POST['bill_address']
+            est.gst_type = request.POST['gst_type']
+            est.gstin = request.POST['gstin']
+            est.place_of_supply = request.POST['place_of_supply']
+
+            est.challan_no = ESTNo
+           
+            est.challan_date = request.POST['challan_date']
+            est.challan_type = request.POST['challan_type']
+           
+
+            est.subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal'])
+            # est.igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst'])
+            # est.cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst'])
+            # est.sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst'])
+            est.tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount'])
+            est.adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj'])
+            est.shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship'])
+            est.grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal'])
+
+            est.note = request.POST['note']
+
+            if len(request.FILES) != 0:
+                est.file=request.FILES.get('file')
+
+            est.save()
+
+            # Save estimate items.
+
+            itemId = request.POST.getlist("item_id[]")
+            itemName = request.POST.getlist("item_name[]")
+            print(itemName)
+            hsn  = request.POST.getlist("hsn[]")
+            qty = request.POST.getlist("qty[]")
+            price = request.POST.getlist("price[]")
+            plc=request.POST['place_of_supply']
+
+            cgst=request.POST.getlist("taxGST[]")
+            igst=request.POST.getlist("taxIGST[]")
+
+            if plc!=com.State:
+                    tax = igst
+                    est.igst = float(request.POST['igst'])
+                    est.cgst = 0
+                    est.sgst = 0
+                    est.save()
+
+            if plc==com.State:
+                    tax = cgst
+                    est.igst = 0
+                    est.cgst = float(request.POST['cgst'])
+                    est.sgst = float(request.POST['sgst'])
+                    d = float(request.POST['cgst'])
+                   
+                    est.save()
+
+             
+
+            # tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.State else request.POST.getlist("taxIGST[]")
+            discount = request.POST.getlist("discount[]")
+            total = request.POST.getlist("total[]")
+            est_item_ids = request.POST.getlist("id[]")
+            EstItem_ids = [int(id) for id in est_item_ids]
+
+            estimate_items = Fin_Delivery_Challan_Items.objects.filter(delivery_challan = est)
+            object_ids = [obj.id for obj in estimate_items]
+
+            ids_to_delete = [obj_id for obj_id in object_ids if obj_id not in EstItem_ids]
+
+            Fin_Delivery_Challan_Items.objects.filter(id__in=ids_to_delete).delete()
+            
+            count = Fin_Delivery_Challan_Items.objects.filter(delivery_challan = est).count()
+
+            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total)==len(EstItem_ids) and EstItem_ids and itemId and itemName and hsn and qty and price and tax and discount and total:
+                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total,EstItem_ids)
+                mapped = list(mapped)
+                for ele in mapped:
+                    if int(len(itemId))>int(count):
+                        if ele[8] == 0:
+                            itm = Fin_Items.objects.get(id = int(ele[0]))
+                            Fin_Delivery_Challan_Items.objects.create(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+                            itm.current_stock -= int(ele[3])
+                            # created_instance.save()
+                            itm.save()
+                        else:
+                            itm = Fin_Items.objects.get(id = int(ele[0]))
+                            Fin_Delivery_Challan_Items.objects.filter( id = int(ele[8])).update(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+                            itm.current_stock -= int(ele[3])
+                            # created_instance.save()
+                            itm.save()
+                    else:
+                        itm = Fin_Items.objects.get(id = int(ele[0]))
+                        Fin_Delivery_Challan_Items.objects.filter( id = int(ele[8])).update(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
+                        itm.current_stock -= int(ele[3])
+                            # created_instance.save()
+                        itm.save()
+            # Save transaction
+                    
+            Fin_Delivery_Challan_History.objects.create(
+                Company = com,
+                LoginDetails = data,
+                delivery_challan = est,
+                date=timezone.now().date(),
+                action = 'Edited'
+            )
+
+            return redirect(challan_overview, id)
+        else:
+            return redirect(challan_overview, id)
    
 def Fin_editchallanto(request,id):
     if 's_id' in request.session:
@@ -18966,8 +19345,6 @@ def Fin_challanConvertRecInvoice(request, id):
             return redirect(Fin_convertchallanToRecurringInvoice, id)
     else:
        return redirect('/')
-#End
-
 
 
 def Fin_sharechallanToEmail(request,id):
@@ -19118,57 +19495,69 @@ def customer_dropdown(request):                                                 
                 last_name=option.last_name
                 options[option.id] = [title,first_name,last_name,f"{title}"]
             return JsonResponse(options)
-    
+#End
 
 
-
-# updated
-
-
-def Fin_convertchallanToInvoice(request,id):
+# < ------------- Shemeem -------- > Expense < ------------------------------- >
+        
+def Fin_expense(request):
     if 's_id' in request.session:
         s_id = request.session['s_id']
         data = Fin_Login_Details.objects.get(id = s_id)
         if data.User_Type == "Company":
             com = Fin_Company_Details.objects.get(Login_Id = s_id)
-            allmodules = Fin_Modules_List.objects.get(Login_Id = s_id,status = 'New')
             cmp = com
         else:
             com = Fin_Staff_Details.objects.get(Login_Id = s_id)
-            allmodules = Fin_Modules_List.objects.get(company_id = com.company_id,status = 'New')
             cmp = com.company_id
 
-        est = Fin_Delivery_Challan.objects.get(id = id)
-        estItms = Fin_Delivery_Challan_Items.objects.filter(delivery_challan = est)
+        allmodules = Fin_Modules_List.objects.get(company_id = cmp, status = 'New')
+        exp = Fin_Expense.objects.filter(Company = cmp)
+        return render(request,'company/Fin_Expense.html',{'allmodules':allmodules,'com':com, 'cmp':cmp,'data':data,'expenses':exp})
+    else:
+       return redirect('/')
+
+def Fin_addExpense(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+            cmp = com
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id)
+            cmp = com.company_id
+
+        allmodules = Fin_Modules_List.objects.get(company_id = cmp, status = 'New')
         cust = Fin_Customers.objects.filter(Company = cmp, status = 'Active')
-        itms = Fin_Items.objects.filter(Company = cmp, status = 'Active')
-        trms = Fin_Company_Payment_Terms.objects.filter(Company = cmp)
+        vend = Fin_Vendors.objects.filter(Company = cmp, status = 'Active')
         bnk = Fin_Banking.objects.filter(company = cmp)
-        lst = Fin_Price_List.objects.filter(Company = cmp, status = 'Active')
-        units = Fin_Units.objects.filter(Company = cmp)
         acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=cmp).order_by('account_name')
+        trms = Fin_Company_Payment_Terms.objects.filter(Company = cmp)
+        custLst = Fin_Price_List.objects.filter(Company = cmp, type = 'Sales', status = 'Active')
+        vendLst = Fin_Price_List.objects.filter(Company = cmp, type = 'Purchase', status = 'Active')
 
-        # Fetching last invoice and assigning upcoming ref no as current + 1
-        # Also check for if any bill is deleted and ref no is continuos w r t the deleted invoice
-        latest_inv = Fin_Invoice.objects.filter(Company = cmp).order_by('-id').first()
+        # Fetching last Expnse and assigning upcoming ref no as current + 1
+        # Also check for if any bill is deleted and ref no is continuos w r t the deleted Expnse
+        latest_exp = Fin_Expense.objects.filter(Company = cmp).order_by('-id').first()
 
-        new_number = int(latest_inv.reference_no) + 1 if latest_inv else 1
+        new_number = int(latest_exp.reference_no) + 1 if latest_exp else 1
 
-        if Fin_Invoice_Reference.objects.filter(Company = cmp).exists():
-            deleted = Fin_Invoice_Reference.objects.get(Company = cmp)
+        if Fin_Expense_Reference.objects.filter(Company = cmp).exists():
+            deleted = Fin_Expense_Reference.objects.get(Company = cmp)
             
             if deleted:
                 while int(deleted.reference_no) >= new_number:
                     new_number+=1
 
-        # Finding next invoice number w r t last invoic number if exists.
-        nxtInv = ""
-        lastInv = Fin_Invoice.objects.filter(Company = cmp).last()
-        if lastInv:
-            inv_no = str(lastInv.invoice_no)
+        # Finding next EXP number w r t last EXP number if exists.
+        nxtEXP = ""
+        lastEXP = Fin_Expense.objects.filter(Company = cmp).last()
+        if lastEXP:
+            expense_no = str(lastEXP.expense_no)
             numbers = []
             stri = []
-            for word in inv_no:
+            for word in expense_no:
                 if word.isdigit():
                     numbers.append(word)
                 else:
@@ -19182,137 +19571,173 @@ def Fin_convertchallanToInvoice(request,id):
             for j in stri:
                 st = st+j
 
-            inv_num = int(num)+1
+            exp_num = int(num)+1
 
             if num[0] == '0':
-                if inv_num <10:
-                    nxtInv = st+'0'+ str(inv_num)
+                if exp_num <10:
+                    nxtEXP = st+'0'+ str(exp_num)
                 else:
-                    nxtInv = st+ str(inv_num)
+                    nxtEXP = st+ str(exp_num)
             else:
-                nxtInv = st+ str(inv_num)
+                nxtEXP = st+ str(exp_num)
+        else:
+            nxtEXP = 'EXP01'
 
         context = {
-            'allmodules':allmodules, 'com':com, 'cmp':cmp, 'data':data,'estimate':est, 'estItems':estItms, 'customers':cust, 'items':itms, 'pTerms':trms,'list':lst,
-            'banks':bnk,'units':units, 'accounts':acc,'ref_no':new_number,'invNo':nxtInv
+            'allmodules':allmodules, 'com':com, 'cmp':cmp, 'data':data, 'customers':cust, 'vendors':vend,
+            'ref_no':new_number,'banks':bnk,'EXPNo':nxtEXP, 'accounts':acc, 'pTerms': trms, 'custList':custLst, 'vendList': vendLst,
         }
-        return render(request,'company/Fin_Convert_Delivery_Challan_toInvoice.html',context)
+        return render(request,'company/Fin_Add_Expense.html',context)
     else:
        return redirect('/')
 
-def newdeliverychallan(request):
+def Fin_createNewExpenseAccount(request):
     if 's_id' in request.session:
         s_id = request.session['s_id']
-        try:
-            data = Fin_Login_Details.objects.get(id=s_id)
-            if data.User_Type == "Company":
-                com = Fin_Company_Details.objects.get(Login_Id=data)
-                cmp = com
-                allmodules = Fin_Modules_List.objects.get(Login_Id=s_id, status='New')
-                
-                cust = Fin_Customers.objects.filter(Company=com, status='Active')
-                itms = Fin_Items.objects.filter(Company=com, status='Active')
-                units = Fin_Units.objects.filter(Company=com)
-                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com).order_by('account_name')
-                lst = Fin_Price_List.objects.filter(Company=com, status='Active')
-                
-                trms = Fin_Company_Payment_Terms.objects.filter(Company = com)
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id=s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+
+        if request.method == 'POST':
+            name = request.POST['account_name']
+            type = request.POST['account_type']
+            subAcc = True if request.POST['subAccountCheckBox'] == 'true' else False
+            parentAcc = request.POST['parent_account'] if subAcc == True else None
+            accCode = request.POST['account_code']
+            bankAccNum = None
+            desc = request.POST['description']
+            
+            createdDate = date.today()
+            
+            #save account and transaction if account doesn't exists already
+            if Fin_Chart_Of_Account.objects.filter(Company=com, account_name__iexact=name).exists():
+                res = f'<script>alert("{name} already exists, try another!");window.history.back();</script>'
+                msg = f"{name} already exists, try another!"
+                return JsonResponse({'status':False, 'message':msg})
             else:
-                com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
-                cmp = com
-                allmodules = Fin_Modules_List.objects.get(company_id=com.id, status='New')
+                account = Fin_Chart_Of_Account(
+                    Company = com,
+                    LoginDetails = data,
+                    account_type = type,
+                    account_name = name,
+                    account_code = accCode,
+                    description = desc,
+                    balance = 0.0,
+                    balance_type = None,
+                    credit_card_no = None,
+                    sub_account = subAcc,
+                    parent_account = parentAcc,
+                    bank_account_no = bankAccNum,
+                    date = createdDate,
+                    create_status = 'added',
+                    status = 'active'
+                )
+                account.save()
+
+                #save transaction
+
+                Fin_ChartOfAccount_History.objects.create(
+                    Company = com,
+                    LoginDetails = data,
+                    account = account,
+                    action = 'Created'
+                )
                 
-                cust = Fin_Customers.objects.filter(Company=com.id, status='Active')
-                itms = Fin_Items.objects.filter(Company=com.id, status='Active')
-                units = Fin_Units.objects.filter(Company=com.id)
-                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com.id).order_by('account_name')
-                lst = Fin_Price_List.objects.filter(Company=com.id, status='Active')
-                
-                trms = Fin_Company_Payment_Terms.objects.filter(Company = com.id)
+                list= []
+                account_objects = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com).order_by('account_name')
 
+                for account in account_objects:
+                    
+                    accounts = {
+                        'id':account.id,
+                        'name': account.account_name
+                    }
+                    list.append(accounts)
 
-            latest_eway = Fin_Delivery_Challan.objects.filter(Company=com).order_by('-reference_no').first()
+                return JsonResponse({'status':True,'accounts':list},safe=False)
 
-            new_number = int(latest_eway.reference_no) + 1 if latest_eway else 1
+        return JsonResponse({'status':False, 'message':'Something went wrong.!'})
+    else:
+       return redirect('/')
 
-            if Fin_Delivery_Challan_Reference.objects.filter(Company=com).exists():
-                deleted = Fin_Delivery_Challan_Reference.objects.filter(Company=com).last()
-                
-                if deleted:
-                    while int(deleted.reference_number) >= new_number:
-                        new_number += 1
+def Fin_checkExpenseNumber(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+        
+        ExpNo = request.GET['ExpNum']
 
-            nxtEway = ""
-            lastEway = Fin_Delivery_Challan.objects.filter(Company=com).last()
-            if lastEway:
-                eway_no = str(lastEway.challan_no)
-                print("Original eway_no:", eway_no)
+        # Finding next exp number w r t last exp number if exists.
+        nxtEXP = ""
+        lastEXP = Fin_Expense.objects.filter(Company = com).last()
+        if lastEXP:
+            exp_no = str(lastEXP.expense_no)
+            numbers = []
+            stri = []
+            for word in exp_no:
+                if word.isdigit():
+                    numbers.append(word)
+                else:
+                    stri.append(word)
+            
+            num=''
+            for i in numbers:
+                num +=i
+            
+            st = ''
+            for j in stri:
+                st = st+j
 
-                for i in range(len(eway_no) - 1, -1, -1):
-                    if eway_no[i].isdigit():
-                        # Increment the last digit by 1
-                        new_digit = str((int(eway_no[i]) + 1) % 10)
+            exp_num = int(num)+1
 
-                        # Replace the last digit in the input string
-                        result = eway_no[:i] + new_digit + eway_no[i+1:]
-                        print("Modified eway_no:", result)
+            if num[0] == '0':
+                if exp_num <10:
+                    nxtEXP = st+'0'+ str(exp_num)
+                else:
+                    nxtEXP = st+ str(exp_num)
+            else:
+                nxtEXP = st+ str(exp_num)
 
-                        # Break out of the loop after updating the last digit
-                        break
+        PatternStr = []
+        for word in ExpNo:
+            if word.isdigit():
+                pass
+            else:
+                PatternStr.append(word)
+        
+        pattern = ''
+        for j in PatternStr:
+            pattern += j
 
-                numbers = []
-                stri = []
+        pattern_exists = checkExpenseNumberPattern(pattern)
 
+        if pattern !="" and pattern_exists:
+            return JsonResponse({'status':False, 'message':'Expense No. Pattern already Exists.!'})
+        elif Fin_Expense.objects.filter(Company = com, expense_no__iexact = ExpNo).exists():
+            return JsonResponse({'status':False, 'message':'Expense No. already Exists.!'})
+        elif nxtEXP != "" and ExpNo != nxtEXP:
+            return JsonResponse({'status':False, 'message':'Expense No. is not continuous.!'})
+        else:
+            return JsonResponse({'status':True, 'message':'Number is okay.!'})
+    else:
+       return redirect('/')
 
+def checkExpenseNumberPattern(pattern):
+    models = [Fin_Invoice, Fin_Sales_Order, Fin_Estimate, Fin_Purchase_Bill, Fin_Manual_Journal, Fin_Recurring_Invoice, Fin_Purchase_Order]
 
+    for model in models:
+        field_name = model.getNumFieldName(model)
+        if model.objects.filter(**{f"{field_name}__icontains": pattern}).exists():
+            return True
+    return False
 
-                # for word in eway_no:
-                #     if word.isdigit():
-                #         numbers.append(word)
-                #     else:
-                #         stri.append(word)
-
-                # num = ''.join(numbers)
-                # print(num)
-                # st = ''.join(stri)
-                # print(st)
-
-                # eway_num = int(num) + 1
-                
-                # print(eway_num)
-                # if num[0] == '0':
-                #     nxtEway = st + '0' + str(eway_num)
-                # else:
-                nxtEway = result
-
-            context = {
-                'com': cmp,
-                'LoginDetails': data,
-                'allmodules': allmodules,
-                'data': data,
-                'com':com,
-                
-                'customers': cust,
-                'items': itms,
-                'lst': lst,
-                'ESTNo':nxtEway,
-              
-                'pTerms':trms,
-                'accounts':acc,
-                'units':units,
-                'ref_no':new_number
-            }
-            return render(request, 'company/Fin_add_delivery_challan.html', context)
-        except Fin_Login_Details.DoesNotExist:
-            return redirect('/')
-    return redirect('newdeliverychallan')
-
-
-
-
-# update 2
-
-def createdeliverychallan(request):
+def Fin_createExpense(request):
     if 's_id' in request.session:
         s_id = request.session['s_id']
         data = Fin_Login_Details.objects.get(id = s_id)
@@ -19322,120 +19747,416 @@ def createdeliverychallan(request):
             com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
 
         if request.method == 'POST':
-            CHNo = request.POST['challan_no']
-
-            PatternStr = []
-            for word in CHNo:
-                if word.isdigit():
-                    pass
-                else:
-                    PatternStr.append(word)
-            
-            pattern = ''
-            for j in PatternStr:
-                pattern += j
-
-            pattern_exists = checkEstimateNumberPattern(pattern)
-
-            if pattern !="" and pattern_exists:
-                res = f'<script>alert("Challan No. Pattern already Exists.! Try another!");window.history.back();</script>'
+            expType = request.POST['expense_type']
+            HSN = request.POST['hsn']
+            SAC = request.POST['sac']
+            EXPNum = request.POST['expense_no']
+            if Fin_Expense.objects.filter(Company = com, expense_no__iexact = EXPNum).exists():
+                res = f'<script>alert("Expense Number `{EXPNum}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+            elif expType == 'Goods' and Fin_Expense.objects.filter(Company = com, hsn_number__iexact = HSN).exists():
+                res = f'<script>alert("HSN Number `{HSN}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+            elif expType == 'Service' and Fin_Expense.objects.filter(Company = com, sac_number__iexact = SAC).exists():
+                res = f'<script>alert("SAC Number `{SAC}` already exists, try another!");window.history.back();</script>'
                 return HttpResponse(res)
 
-            if Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = CHNo).exists():
-                res = f'<script>alert("Challan Number `{CHNo}` already exists, try another!");window.history.back();</script>'
-                return HttpResponse(res)
-            
-            challan = Fin_Delivery_Challan(
+            vendorSupply = request.POST['source_of_supply']
+            customerSupply = request.POST['place_of_supply']
+
+            exp = Fin_Expense(
                 Company = com,
                 LoginDetails = com.Login_Id,
-                Customer = None if request.POST['customer'] == "" else Fin_Customers.objects.get(id = request.POST['customer']),
+                Vendor = None if request.POST['vendorId'] == "" else Fin_Vendors.objects.get(id = request.POST['vendorId']),
+                vendor_name = request.POST['vendor'],
+                vendor_email = request.POST['vendorEmail'],
+                vendor_address = request.POST['vendor_bill_address'],
+                vendor_gst_type = request.POST['vendor_gst_type'],
+                vendor_gstin = request.POST['vendor_gstin'],
+                vendor_source_of_supply = vendorSupply,
+
+                Customer = None if request.POST['customerId'] == "" else Fin_Customers.objects.get(id = request.POST['customerId']),
+                customer_name = request.POST['customer'],
                 customer_email = request.POST['customerEmail'],
-                billing_address = request.POST['bill_address'],
-                gst_type = request.POST['gst_type'],
-                gstin = request.POST['gstin'],
-                place_of_supply = request.POST['place_of_supply'],
+                customer_address = request.POST['bill_address'],
+                customer_gst_type = request.POST['gst_type'],
+                customer_gstin = request.POST['gstin'],
+                customer_place_of_supply = customerSupply,
+
                 reference_no = request.POST['reference_number'],
-                challan_no = CHNo,
-                challan_type= request.POST['challan_type'],
-                
-                challan_date = request.POST['challan_date'],
-                # document= request.POST['file'],
-                
-                subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal']),
-                igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst']),
-                cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst']),
-                sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst']),
-                tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount']),
-                adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj']),
-                shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship']),
-                grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal']),
+                expense_no = EXPNum,
+                expense_date = request.POST['expense_date'],
+                Account = None if request.POST['accountId'] == "" else Fin_Chart_Of_Account.objects.get(id = request.POST['accountId']),
+                expense_account = request.POST['expense_account'],
+                expense_type = expType,
+                hsn_number = HSN,
+                sac_number = SAC,
+                tax_rate = request.POST['taxGST'] if vendorSupply == customerSupply else request.POST['taxIGST'],
+
+                payment_method = None if request.POST['payment_method'] == "" else request.POST['payment_method'],
+                cheque_no = None if request.POST['cheque_id'] == "" else request.POST['cheque_id'],
+                upi_no = None if request.POST['upi_id'] == "" else request.POST['upi_id'],
+                bank_acc_no = None if request.POST['bnk_id'] == "" else request.POST['bnk_id'],
+                amount = 0.0 if request.POST['amount'] == "" else float(request.POST['amount']),
                 note = request.POST['note']
             )
 
-            challan.save()
-            challanref = Fin_Delivery_Challan_Reference(
-                Company = com,
-                LoginDetails = com.Login_Id,
-                
-                reference_number = request.POST['reference_number'],
-                
-            )
-
-            challanref.save()
-
-
+            exp.save()
 
             if len(request.FILES) != 0:
-                challan.document=request.FILES.get('file')
-            challan.save()
+                exp.file=request.FILES.get('file')
+            exp.save()
 
             if 'Draft' in request.POST:
-                challan.status = "Draft"
+                exp.status = "Draft"
             elif "Save" in request.POST:
-                challan.status = "Saved" 
-            challan.save()
-
-            # Save Estimate items.
-
-            itemId = request.POST.getlist("item_id[]")
-            itemName = request.POST.getlist("item_name[]")
-            hsn  = request.POST.getlist("hsn[]")
-            qty = request.POST.getlist("qty[]")
-            price = request.POST.getlist("price[]")
-            tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.State else request.POST.getlist("taxIGST[]")
-            discount = request.POST.getlist("discount[]")
-            total = request.POST.getlist("total[]")
-
-            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total) and itemId and itemName and hsn and qty and price and tax and discount and total:
-                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total)
-                mapped = list(mapped)
-                for ele in mapped:
-                    itm = Fin_Items.objects.get(id = int(ele[0]))
-                    created_instance = Fin_Delivery_Challan_Items.objects.create(delivery_challan = challan, items = itm, hsn = ele[2], quantity = int(ele[3]),  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
-                    itm.current_stock -= int(ele[3])
-                    created_instance.save()
-                    itm.save()
+                exp.status = "Saved" 
+            exp.save()
             
             # Save transaction
                     
-            Fin_Delivery_Challan_History.objects.create(
+            Fin_Expense_History.objects.create(
                 Company = com,
                 LoginDetails = data,
-                delivery_challan = challan,
-                date=timezone.now().date(),
-                
-               
+                Expense = exp,
                 action = 'Created'
             )
 
-            return redirect(deliverylist)
+            return redirect(Fin_expense)
         else:
-            return redirect(deliverylist)
+            return redirect(Fin_addExpense)
     else:
        return redirect('/')
 
+def Fin_viewExpense(request, id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
 
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+            cmp = com
 
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id)
+            cmp = com.company_id
+
+        allmodules = Fin_Modules_List.objects.get(company_id = cmp,status = 'New')
+        exp = Fin_Expense.objects.get(id = id)
+        cmt = Fin_Expense_Comments.objects.filter(Expense = exp)
+        hist = Fin_Expense_History.objects.filter(Expense = exp).last()
+        
+        return render(request,'company/Fin_View_Expense.html',{'allmodules':allmodules,'com':com,'cmp':cmp, 'data':data, 'expense':exp, 'history':hist, 'comments':cmt})
+    else:
+       return redirect('/')
+
+def Fin_convertExpense(request,id):
+    if 's_id' in request.session:
+
+        exp = Fin_Expense.objects.get(id = id)
+        exp.status = 'Saved'
+        exp.save()
+        return redirect(Fin_viewExpense, id)
+
+def Fin_addExpenseComment(request, id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+
+        exp = Fin_Expense.objects.get(id = id)
+        if request.method == "POST":
+            cmt = request.POST['comment'].strip()
+
+            Fin_Expense_Comments.objects.create(Company = com, Expense = exp, comments = cmt)
+            return redirect(Fin_viewExpense, id)
+        return redirect(Fin_viewExpense, id)
+    return redirect('/')
+
+def Fin_deleteExpenseComment(request,id):
+    if 's_id' in request.session:
+        cmt = Fin_Expense_Comments.objects.get(id = id)
+        expId = cmt.Expense.id
+        cmt.delete()
+        return redirect(Fin_viewExpense, expId)
+    
+def Fin_expenseHistory(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        exp = Fin_Expense.objects.get(id = id)
+        his = Fin_Expense_History.objects.filter(Expense = exp)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+            allmodules = Fin_Modules_List.objects.get(Login_Id = s_id,status = 'New')
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id)
+            allmodules = Fin_Modules_List.objects.get(company_id = com.company_id,status = 'New')
+        
+        return render(request,'company/Fin_Expense_History.html',{'allmodules':allmodules,'com':com,'data':data,'history':his, 'expense':exp})
+    else:
+       return redirect('/')
+    
+def Fin_deleteExpense(request, id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        exp = Fin_Expense.objects.get( id = id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+
+        # Storing ref number to deleted table
+        # if entry exists and lesser than the current, update and save => Only one entry per company
+        if Fin_Expense_Reference.objects.filter(Company = com).exists():
+            deleted = Fin_Expense_Reference.objects.get(Company = com)
+            if int(exp.reference_no) > int(deleted.reference_no):
+                deleted.reference_no = exp.reference_no
+                deleted.save()
+        else:
+            Fin_Expense_Reference.objects.create(Company = com, reference_no = exp.reference_no, LoginDetails = com.Login_Id)
+        
+        exp.delete()
+        return redirect(Fin_expense)
+
+def Fin_attachExpenseFile(request, id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        exp = Fin_Expense.objects.get(id = id)
+
+        if request.method == 'POST' and len(request.FILES) != 0:
+            exp.file = request.FILES.get('file')
+            exp.save()
+
+        return redirect(Fin_viewExpense, id)
+    else:
+        return redirect('/')
+
+def Fin_expensePdf(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id=s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+        
+        exp = Fin_Expense.objects.get(id = id)
+    
+        context = {'expense':exp, 'cmp':com}
+        
+        template_path = 'company/Fin_Expense_Pdf.html'
+        fname = 'Expense_'+exp.expense_no
+        # return render(request, 'company/Fin_Expense_Pdf.html',context)
+        # Create a Django response object, and specify content_type as pdftemp_
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] =f'attachment; filename = {fname}.pdf'
+        # find the template and render it.
+        template = get_template(template_path)
+        html = template.render(context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(
+        html, dest=response)
+        # if error then show some funny view
+        if pisa_status.err:
+            return HttpResponse('We had some errors <pre>' + html + '</pre>')
+        return response
+    else:
+        return redirect('/')
+
+def Fin_shareExpenseToEmail(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == 'Company':
+            com = Fin_Company_Details.objects.get(Login_Id=s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+        
+        exp = Fin_Expense.objects.get(id = id)
+        try:
+            if request.method == 'POST':
+                emails_string = request.POST['email_ids']
+
+                # Split the string by commas and remove any leading or trailing whitespace
+                emails_list = [email.strip() for email in emails_string.split(',')]
+                email_message = request.POST['email_message']
+                # print(emails_list)
+            
+                context = {'expense':exp, 'cmp':com}
+                template_path = 'company/Fin_Expense_Pdf.html'
+                template = get_template(template_path)
+
+                html  = template.render(context)
+                result = BytesIO()
+                pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+                pdf = result.getvalue()
+                filename = f'Expense_{exp.expense_no}'
+                subject = f"Expense_{exp.expense_no}"
+                email = EmailMessage(subject, f"Hi,\nPlease find the attached Expense for - #-{exp.expense_no}. \n{email_message}\n\n--\nRegards,\n{com.Company_name}\n{com.Address}\n{com.State} - {com.Country}\n{com.Contact}", from_email=settings.EMAIL_HOST_USER, to=emails_list)
+                email.attach(filename, pdf, "application/pdf")
+                email.send(fail_silently=False)
+
+                messages.success(request, 'Expense details has been shared via email successfully..!')
+                return redirect(Fin_viewExpense,id)
+        except Exception as e:
+            print(e)
+            messages.error(request, f'{e}')
+            return redirect(Fin_viewExpense, id)
+
+def Fin_editExpense(request,id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+            cmp = com
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id)
+            cmp = com.company_id
+
+        allmodules = Fin_Modules_List.objects.get(company_id = cmp, status = 'New')
+        exp = Fin_Expense.objects.get(id = id)
+
+        cust = Fin_Customers.objects.filter(Company = cmp, status = 'Active')
+        vend = Fin_Vendors.objects.filter(Company = cmp, status = 'Active')
+        bnk = Fin_Banking.objects.filter(company = cmp)
+        acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=cmp).order_by('account_name')
+        trms = Fin_Company_Payment_Terms.objects.filter(Company = cmp)
+        custLst = Fin_Price_List.objects.filter(Company = cmp, type = 'Sales', status = 'Active')
+        vendLst = Fin_Price_List.objects.filter(Company = cmp, type = 'Purchase', status = 'Active')
+
+        context = {
+            'allmodules':allmodules, 'com':com, 'cmp':cmp, 'data':data,'expense':exp, 'customers':cust, 'pTerms':trms,'custList':custLst, 'vendList': vendLst,
+            'banks':bnk, 'accounts':acc, 'vendors':vend
+        }
+        return render(request,'company/Fin_Edit_Expense.html',context)
+    else:
+       return redirect('/')
+
+def Fin_updateExpense(request, id):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+
+        if request.method == 'POST':
+            expType = request.POST['expense_type']
+            HSN = request.POST['hsn']
+            SAC = request.POST['sac']
+            exp = Fin_Expense.objects.get(id = id)
+            EXPNum = request.POST['expense_no']
+            if exp.expense_no != EXPNum and Fin_Expense.objects.filter(Company = com, expense_no__iexact = EXPNum).exists():
+                res = f'<script>alert("Expense Number `{EXPNum}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+            elif exp.hsn_number != HSN and expType == 'Goods' and Fin_Expense.objects.filter(Company = com, hsn_number__iexact = HSN).exists():
+                res = f'<script>alert("HSN Number `{HSN}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+            elif exp.sac_number != SAC and expType == 'Service' and Fin_Expense.objects.filter(Company = com, sac_number__iexact = SAC).exists():
+                res = f'<script>alert("SAC Number `{SAC}` already exists, try another!");window.history.back();</script>'
+                return HttpResponse(res)
+
+            vendorSupply = request.POST['source_of_supply']
+            customerSupply = request.POST['place_of_supply']
+
+            exp.Vendor = None if request.POST['vendorId'] == "" else Fin_Vendors.objects.get(id = request.POST['vendorId'])
+            exp.vendor_name = request.POST['vendor']
+            exp.vendor_email = request.POST['vendorEmail']
+            exp.vendor_address = request.POST['vendor_bill_address']
+            exp.vendor_gst_type = request.POST['vendor_gst_type']
+            exp.vendor_gstin = request.POST['vendor_gstin']
+            exp.vendor_source_of_supply = vendorSupply
+
+            exp.Customer = None if request.POST['customerId'] == "" else Fin_Customers.objects.get(id = request.POST['customerId'])
+            exp.customer_name = request.POST['customer']
+            exp.customer_email = request.POST['customerEmail']
+            exp.customer_address = request.POST['bill_address']
+            exp.customer_gst_type = request.POST['gst_type']
+            exp.customer_gstin = request.POST['gstin']
+            exp.customer_place_of_supply = customerSupply
+
+            exp.reference_no = request.POST['reference_number']
+            exp.expense_no = EXPNum
+            exp.expense_date = request.POST['expense_date']
+            exp.Account = None if request.POST['accountId'] == "" else Fin_Chart_Of_Account.objects.get(id = request.POST['accountId'])
+            exp.expense_account = request.POST['expense_account']
+            exp.expense_type = expType
+            exp.hsn_number = HSN
+            exp.sac_number = SAC
+            exp.tax_rate = request.POST['taxGST'] if vendorSupply == customerSupply else request.POST['taxIGST']
+
+            exp.payment_method = None if request.POST['payment_method'] == "" else request.POST['payment_method']
+            exp.cheque_no = None if request.POST['cheque_id'] == "" else request.POST['cheque_id']
+            exp.upi_no = None if request.POST['upi_id'] == "" else request.POST['upi_id']
+            exp.bank_acc_no = None if request.POST['bnk_id'] == "" else request.POST['bnk_id']
+            exp.amount = 0.0 if request.POST['amount'] == "" else float(request.POST['amount'])
+            exp.note = request.POST['note']
+
+            if len(request.FILES) != 0:
+                exp.file=request.FILES.get('file')
+
+            exp.save()
+            
+            # Save transaction
+                    
+            Fin_Expense_History.objects.create(
+                Company = com,
+                LoginDetails = data,
+                Expense = exp,
+                action = 'Edited'
+            )
+
+            return redirect(Fin_viewExpense, id)
+        else:
+            return redirect(Fin_editExpense, id)
+    else:
+       return redirect('/')
+
+def Fin_checkExpenseHSN(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+        
+        hsnNo = request.GET['hsn']
+        print(hsnNo)
+
+        if hsnNo != "" and Fin_Expense.objects.filter(Company = com, hsn_number__iexact = hsnNo).exists():
+            return JsonResponse({'status':True, 'is_exists':True, 'message':'HSN Number already exists.!'})
+        else:
+            return JsonResponse({'status':True, 'is_exists':False, 'message':''})
+    else:
+       return redirect('/')
+
+def Fin_checkExpenseSAC(request):
+    if 's_id' in request.session:
+        s_id = request.session['s_id']
+        data = Fin_Login_Details.objects.get(id = s_id)
+        if data.User_Type == "Company":
+            com = Fin_Company_Details.objects.get(Login_Id = s_id)
+        else:
+            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
+        
+        sacNo = request.GET['sac']
+
+        if sacNo != "" and Fin_Expense.objects.filter(Company = com, sac_number__iexact = sacNo).exists():
+            return JsonResponse({'status':True, 'is_exists':True, 'message':'SAC Number already exists.!'})
+        else:
+            return JsonResponse({'status':True, 'is_exists':False, 'message':''})
+    else:
+       return redirect('/')
+# End
 
 def Fin_getItems2(request):
     if 's_id' in request.session:
@@ -19454,10 +20175,8 @@ def Fin_getItems2(request):
         return JsonResponse(items)
     else:
         return redirect('/')
-
-
-
-
+        
+        
 def Fin_getInvItemDetails2(request):
     if 's_id' in request.session:
         s_id = request.session['s_id']
@@ -19518,548 +20237,3 @@ def Fin_getInvItemDetails2(request):
         return JsonResponse(context)
     else:
        return redirect('/')
-
-
-
-def editchallan(request,id):
-     if 's_id' in request.session:
-        s_id = request.session['s_id']
-        data = Fin_Login_Details.objects.get(id = s_id)
-        if data.User_Type == "Company":
-            com = Fin_Company_Details.objects.get(Login_Id = s_id)
-        else:
-            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
-        est = Fin_Delivery_Challan.objects.get(id = id)
-        if request.method == 'POST':
-            ESTNo = request.POST['challan_no']
-
-            PatternStr = []
-            for word in ESTNo:
-                if word.isdigit():
-                    pass
-                else:
-                    PatternStr.append(word)
-            
-            pattern = ''
-            for j in PatternStr:
-                pattern += j
-
-            pattern_exists = checkEstimateNumberPattern(pattern)
-
-            if pattern !="" and pattern_exists:
-                res = f'<script>alert("Challan No. Pattern already Exists.! Try another!");window.history.back();</script>'
-                return HttpResponse(res)
-
-            if est.challan_no != ESTNo and Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = ESTNo).exists():
-                res = f'<script>alert("Challan Number `{ESTNo}` already exists, try another!");window.history.back();</script>'
-                return HttpResponse(res)
-
-            est.Customer = None if request.POST['customer'] == "" else Fin_Customers.objects.get(id = request.POST['customer'])
-            est.customer_email = request.POST['customerEmail']
-            est.billing_address = request.POST['bill_address']
-            est.gst_type = request.POST['gst_type']
-            est.gstin = request.POST['gstin']
-            est.place_of_supply = request.POST['place_of_supply']
-
-            est.challan_no = ESTNo
-           
-            est.challan_date = request.POST['challan_date']
-            est.challan_type = request.POST['challan_type']
-           
-
-            est.subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal'])
-            # est.igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst'])
-            # est.cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst'])
-            # est.sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst'])
-            est.tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount'])
-            est.adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj'])
-            est.shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship'])
-            est.grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal'])
-
-            est.note = request.POST['note']
-
-            if len(request.FILES) != 0:
-                est.file=request.FILES.get('file')
-
-            est.save()
-
-            # Save estimate items.
-
-            itemId = request.POST.getlist("item_id[]")
-            itemName = request.POST.getlist("item_name[]")
-            print(itemName)
-            hsn  = request.POST.getlist("hsn[]")
-            qty = request.POST.getlist("qty[]")
-            price = request.POST.getlist("price[]")
-            plc=request.POST['place_of_supply']
-
-            cgst=request.POST.getlist("taxGST[]")
-            igst=request.POST.getlist("taxIGST[]")
-
-            if plc!=com.State:
-                    tax = igst
-                    est.igst = float(request.POST['igst'])
-                    est.cgst = 0
-                    est.sgst = 0
-                    est.save()
-
-            if plc==com.State:
-                    tax = cgst
-                    est.igst = 0
-                    est.cgst = float(request.POST['cgst'])
-                    est.sgst = float(request.POST['sgst'])
-                    d = float(request.POST['cgst'])
-                   
-                    est.save()
-
-             
-
-            # tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.State else request.POST.getlist("taxIGST[]")
-            discount = request.POST.getlist("discount[]")
-            total = request.POST.getlist("total[]")
-            est_item_ids = request.POST.getlist("id[]")
-            EstItem_ids = [int(id) for id in est_item_ids]
-
-            estimate_items = Fin_Delivery_Challan_Items.objects.filter(delivery_challan = est)
-            object_ids = [obj.id for obj in estimate_items]
-
-            ids_to_delete = [obj_id for obj_id in object_ids if obj_id not in EstItem_ids]
-
-            Fin_Delivery_Challan_Items.objects.filter(id__in=ids_to_delete).delete()
-            
-            count = Fin_Delivery_Challan_Items.objects.filter(delivery_challan = est).count()
-
-            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total)==len(EstItem_ids) and EstItem_ids and itemId and itemName and hsn and qty and price and tax and discount and total:
-                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total,EstItem_ids)
-                mapped = list(mapped)
-                for ele in mapped:
-                    if int(len(itemId))>int(count):
-                        if ele[8] == 0:
-                            itm = Fin_Items.objects.get(id = int(ele[0]))
-                            Fin_Delivery_Challan_Items.objects.create(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
-                            itm.current_stock -= int(ele[3])
-                            # created_instance.save()
-                            itm.save()
-                        else:
-                            itm = Fin_Items.objects.get(id = int(ele[0]))
-                            Fin_Delivery_Challan_Items.objects.filter( id = int(ele[8])).update(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
-                            itm.current_stock -= int(ele[3])
-                            # created_instance.save()
-                            itm.save()
-                    else:
-                        itm = Fin_Items.objects.get(id = int(ele[0]))
-                        Fin_Delivery_Challan_Items.objects.filter( id = int(ele[8])).update(delivery_challan = est, items = itm, hsn = ele[2], quantity = int(ele[3]), price = ele[4],  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
-                        itm.current_stock -= int(ele[3])
-                            # created_instance.save()
-                        itm.save()
-            # Save transaction
-                    
-            Fin_Delivery_Challan_History.objects.create(
-                Company = com,
-                LoginDetails = data,
-                delivery_challan = est,
-                date=timezone.now().date(),
-                action = 'Edited'
-            )
-
-            return redirect(challan_overview, id)
-        else:
-            return redirect(challan_overview, id)
-   
-
-
-# debit note 
-        
-
-
-def Fin_debitnotelist(request):
-    if 's_id' in request.session:
-        s_id = request.session['s_id']
-        data = Fin_Login_Details.objects.get(id = s_id)
-        if data.User_Type == "Company":
-            com = Fin_Company_Details.objects.get(Login_Id = s_id)
-            cmp = com
-        else:
-            com = Fin_Staff_Details.objects.get(Login_Id = s_id)
-            cmp = com.company_id
-        
-        allmodules = Fin_Modules_List.objects.get(company_id = cmp,status = 'New')
-        deli = Fin_Debit_Note.objects.filter(Company = cmp)
-        return render(request,'company/Fin_Debit_Note_List.html',{'allmodules':allmodules,'com':com, 'cmp':cmp,'data':data,'deli':deli})
-    else:
-       return redirect('/')
-     
-    
-
-def Fin_debitnoteadd(request):
-    if 's_id' in request.session:
-        s_id = request.session['s_id']
-        try:
-            data = Fin_Login_Details.objects.get(id=s_id)
-            if data.User_Type == "Company":
-                com = Fin_Company_Details.objects.get(Login_Id=data)
-                cmp = com
-                allmodules = Fin_Modules_List.objects.get(Login_Id=s_id, status='New')
-                
-                vend = Fin_Vendors.objects.filter(Company=com, status='Active')
-                itms = Fin_Items.objects.filter(Company=com, status='Active')
-                units = Fin_Units.objects.filter(Company=com)
-                banks = Fin_Banking.objects.filter(company=com)
-                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com).order_by('account_name')
-                lst = Fin_Price_List.objects.filter(Company=com, status='Active')
-                recbill=Fin_Recurring_Bills.objects.filter(company=com)
-            
-                trms = Fin_Company_Payment_Terms.objects.filter(Company = com)
-            else:
-                com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
-                cmp = com
-                allmodules = Fin_Modules_List.objects.get(company_id=com.id, status='New')
-                banks = Fin_Banking.objects.filter(company=com.id)
-                vend = Fin_Vendors.objects.filter(Company=com.id, status='Active')
-                itms = Fin_Items.objects.filter(Company=com.id, status='Active')
-                units = Fin_Units.objects.filter(Company=com.id)
-                acc = Fin_Chart_Of_Account.objects.filter(Q(account_type='Expense') | Q(account_type='Other Expense') | Q(account_type='Cost Of Goods Sold'), Company=com.id).order_by('account_name')
-                lst = Fin_Price_List.objects.filter(Company=com.id, status='Active')
-                recbill=Fin_Recurring_Bills.objects.filter(Company=com.id)
-
-                trms = Fin_Company_Payment_Terms.objects.filter(Company = com.id)
-
-
-            latest_eway = Fin_Delivery_Challan.objects.filter(Company=com).order_by('-reference_no').first()
-
-            new_number = int(latest_eway.reference_no) + 1 if latest_eway else 1
-
-            if Fin_Debite_Note_Reference.objects.filter(Company=com).exists():
-                deleted = Fin_Debite_Note_Reference.objects.filter(Company=com).last()
-                
-                if deleted:
-                    while int(deleted.reference_number) >= new_number:
-                        new_number += 1
-
-            nxtEway = ""
-            lastEway = Fin_Debit_Note.objects.filter(Company=com).last()
-            if lastEway:
-                eway_no = str(lastEway.debit_note_number)
-                print("Original eway_no:", eway_no)
-
-                for i in range(len(eway_no) - 1, -1, -1):
-                    if eway_no[i].isdigit():
-                        # Increment the last digit by 1
-                        new_digit = str((int(eway_no[i]) + 1) % 10)
-
-                        # Replace the last digit in the input string
-                        result = eway_no[:i] + new_digit + eway_no[i+1:]
-                        print("Modified eway_no:", result)
-
-                        # Break out of the loop after updating the last digit
-                        break
-
-                numbers = []
-                stri = []
-
-
-                nxtEway = result
-
-            context = {
-                'com': cmp,
-                'LoginDetails': data,
-                'allmodules': allmodules,
-                'data': data,
-                'com':com,
-                
-                'venders': vend,
-                'items': itms,
-                'lst': lst,
-                'ESTNo':nxtEway,
-                'recbill':recbill,
-                'banks':banks,
-              
-                'pTerms':trms,
-                'accounts':acc,
-                'units':units,
-                'ref_no':new_number
-            }
-            return render(request, 'company/Fin_Debit_Note_Add.html', context)
-        except Fin_Login_Details.DoesNotExist:
-            return redirect('/')
-    return redirect('Fin_debitnotelist')
-
-
-def vendordata(request):
-    sid = request.session['s_id']
-    login = Fin_Login_Details.objects.get(id=sid)
-    
-    if login.User_Type == 'Company':
-        com = Fin_Company_Details.objects.get(Login_Id = sid)
-        customer_id = request.GET.get('id')
-        print(customer_id)
-        cust = Fin_Vendors.objects.get(id=customer_id,Company_id=com.id)
-        
-        recbill=Fin_Purchase_Bill.objects.filter(vendor=customer_id,company_id=com.id)
-        for i in recbill:
-            print(i.bill_no)
-        recbill_data = [{'id': bill.id, 'bill_number': bill.bill_no} for bill in recbill]
-    
-        print('h')
-    
-        print('h')
-        data7 = {'email': cust.email,'billing_street':cust.billing_street,'billing_city':cust.billing_city,'billing_state':cust.billing_state,'gst_type':cust.gst_type,'gstin':cust.gstin,'place_of_supply':cust.place_of_supply,'recbill_data': recbill_data,}
-        return JsonResponse(data7)
-
-      
-        
-    elif login.User_Type == 'Staff' :
-        staf = Fin_Staff_Details.objects.get(Login_Id = sid)
-        customer_id = request.GET.get('id')
-        recbill=Fin_Purchase_Bill.objects.filter(vendor=customer_id,company_id=staf.company_id_id)
-
-        recbill_data = [{'id': bill.id, 'bill_number': bill.bill_number} for bill in recbill]
-
-        cust = Fin_Vendors.objects.get(id=customer_id,Company_id=staf.company_id_id)
-        data7 = {'email': cust.email,'billing_street':cust.billing_street,'billing_city':cust.billing_city,'billing_state':cust.billing_state,'gst_type':cust.gst_type,'gstin':cust.gstin,'place_of_supply':cust.place_of_supply,'recbill_data': recbill_data,}
-        return JsonResponse(data7)
-
-
-
-def Fin_newdebitnote(request):
-    if 's_id' in request.session:
-        s_id = request.session['s_id']
-        data = Fin_Login_Details.objects.get(id = s_id)
-        if data.User_Type == "Company":
-            com = Fin_Company_Details.objects.get(Login_Id = s_id)
-        else:
-            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
-
-        if request.method == 'POST':
-            CHNo = request.POST['debit_no']
-            vendorid = request.POST['vendor']
-            print(vendorid+"gg")
-            vid=Fin_Vendors.objects.get(id=vendorid)
-            # PatternStr = []
-            # for word in CHNo:
-            #     if word.isdigit():
-            #         pass
-            #     else:
-            #         PatternStr.append(word)
-            
-            # pattern = ''
-            # for j in PatternStr:
-            #     pattern += j
-
-            # pattern_exists = checkEstimateNumberPattern(pattern)
-
-            # if pattern !="" and pattern_exists:
-            #     res = f'<script>alert("Challan No. Pattern already Exists.! Try another!");window.history.back();</script>'
-            #     return HttpResponse(res)
-
-            # if Fin_Delivery_Challan.objects.filter(Company = com, challan_no__iexact = CHNo).exists():
-            #     res = f'<script>alert("Challan Number `{CHNo}` already exists, try another!");window.history.back();</script>'
-            #     return HttpResponse(res)
-            
-            debit = Fin_Debit_Note(
-                Company = com,
-                LoginDetails = com.Login_Id,
-                Vendor = vid,
-                vendor_email = request.POST['customerEmail'],
-                billing_address = request.POST['bill_address'],
-                gst_type = request.POST['gst_type'],
-                gstin = request.POST['gstin'],
-                place_of_supply = request.POST['place_of_supply'],
-                reference_number = request.POST['reference_number'],
-                debit_note_number = CHNo,
-                bill_number= request.POST['billSelect'],
-                
-                debit_note_date = request.POST['debit_date'],
-                payment_type = None if request.POST['payment_method'] == "" else request.POST['payment_method'],
-                cheque_number = None if request.POST['cheque_id'] == "" else request.POST['cheque_id'],
-                upi_id = None if request.POST['upi_id'] == "" else request.POST['upi_id'],
-                bank_account = None if request.POST['bnk_id'] == "" else request.POST['bnk_id'],
-                document= request.POST['file'],
-                
-                subtotal = 0.0 if request.POST['subtotal'] == "" else float(request.POST['subtotal']),
-                igst = 0.0 if request.POST['igst'] == "" else float(request.POST['igst']),
-                cgst = 0.0 if request.POST['cgst'] == "" else float(request.POST['cgst']),
-                sgst = 0.0 if request.POST['sgst'] == "" else float(request.POST['sgst']),
-                tax_amount = 0.0 if request.POST['taxamount'] == "" else float(request.POST['taxamount']),
-                adjustment = 0.0 if request.POST['adj'] == "" else float(request.POST['adj']),
-                shipping_charge = 0.0 if request.POST['ship'] == "" else float(request.POST['ship']),
-                grandtotal = 0.0 if request.POST['grandtotal'] == "" else float(request.POST['grandtotal']),
-                note = request.POST['note']
-            )
-
-            debit.save()
-            challanref = Fin_Debite_Note_Reference(
-                Company = com,
-                LoginDetails = com.Login_Id,
-                debit_note=debit,
-                
-                reference_number = request.POST['reference_number'],
-                
-            )
-
-            challanref.save()
-
-
-
-            # if len(request.FILES) != 0:
-            #     challan.document=request.FILES.get('file')
-            # challan.save()
-
-            if 'Draft' in request.POST:
-                debit.status = "Draft"
-            elif "Save" in request.POST:
-                debit.status = "Saved" 
-            debit.save()
-
-            # # Save Estimate items.
-
-            itemId = request.POST.getlist("item_id[]")
-            itemName = request.POST.getlist("item_name[]")
-            hsn  = request.POST.getlist("hsn[]")
-            qty = request.POST.getlist("qty[]")
-            price = request.POST.getlist("price[]")
-            tax = request.POST.getlist("taxGST[]") if request.POST['place_of_supply'] == com.State else request.POST.getlist("taxIGST[]")
-            discount = request.POST.getlist("discount[]")
-            total = request.POST.getlist("total[]")
-
-            if len(itemId)==len(itemName)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total) and itemId and itemName and hsn and qty and price and tax and discount and total:
-                mapped = zip(itemId,itemName,hsn,qty,price,tax,discount,total)
-                mapped = list(mapped)
-                for ele in mapped:
-                    itm = Fin_Items.objects.get(id = int(ele[0]))
-                    created_instance = Fin_Debit_Note_Items.objects.create(debit_note = debit, items = itm, hsn = ele[2], quantity = int(ele[3]),  tax_rate = ele[5], discount = float(ele[6]), total = float(ele[7]))
-                    itm.current_stock -= int(ele[3])
-                    created_instance.save()
-                    itm.save()
-            
-            # # Save transaction
-                    
-            Fin_Debite_Note_History.objects.create(
-                Company = com,
-                LoginDetails = data,
-                debit_note = debit,
-                date=timezone.now().date(),
-                
-               
-                action = 'Created'
-            )
-
-            return redirect(deliverylist)
-        else:
-            return redirect(deliverylist)
-    else:
-       return redirect('/')
-
-def Fin_checkdebitNumber(request):
-    if 's_id' in request.session:
-        s_id = request.session['s_id']
-        data = Fin_Login_Details.objects.get(id = s_id)
-        if data.User_Type == "Company":
-            com = Fin_Company_Details.objects.get(Login_Id = s_id)
-        else:
-            com = Fin_Staff_Details.objects.get(Login_Id = s_id).company_id
-        
-        EstNo = request.GET['EstNum']
-
-        nxtEstNo = ""
-        lastEstmate = Fin_Debit_Note.objects.filter(Company = com).last()
-        # lastEstmate = Fin_Delivery_Challan.objects.filter(Company=com).last()
-        if lastEstmate:
-                eway_no = str(lastEstmate.debit_note_number)
-                print("Original eway_no:", eway_no)
-
-                for i in range(len(eway_no) - 1, -1, -1):
-                    if eway_no[i].isdigit():
-                        # Increment the last digit by 1
-                        new_digit = str((int(eway_no[i]) + 1) % 10)
-
-                        # Replace the last digit in the input string
-                        result = eway_no[:i] + new_digit + eway_no[i+1:]
-                        print("Modified eway_no:", result)
-
-                        # Break out of the loop after updating the last digit
-                        break
-        # if lastEstmate:
-        #     Est_no = str(lastEstmate.challan_no)
-        #     numbers = []
-        #     stri = []
-        #     for word in Est_no:
-        #         if word.isdigit():
-        #             numbers.append(word)
-        #         else:
-        #             stri.append(word)
-            
-        #     num=''
-        #     for i in numbers:
-        #         num +=i
-            
-        #     st = ''
-        #     for j in stri:
-        #         st = st+j
-
-            # est_num = int(num)+1
-
-            # if num[0] == '0':
-            #     if est_num <10:
-            #         nxtEstNo = st+'0'+ str(est_num)
-            #     else:
-            #         nxtEstNo = st+ str(est_num)
-            # else:
-        nxtEstNo = result
-
-        PatternStr = result
-        # for word in EstNo:
-        #     if word.isdigit():
-        #         pass
-        #     else:
-        #         PatternStr.append(word)
-        
-        pattern = ''
-        for j in PatternStr:
-            pattern += j
-
-        pattern_exists = checkEstimateNumberPattern(pattern)
-
-        if pattern !="" and pattern_exists:
-            return JsonResponse({'status':False, 'message':'Challan No. Pattern already Exists.!'})
-        elif Fin_Estimate.objects.filter(Company = com, estimate_no__iexact = EstNo).exists():
-            return JsonResponse({'status':False, 'message':'Challan No. already Exists.!'})
-        elif nxtEstNo != "" and EstNo != nxtEstNo:
-            return JsonResponse({'status':False, 'message':'Challan No. is not continuous.!'})
-        else:
-            return JsonResponse({'status':True, 'message':'Number is okay.!'})
-    else:
-       return redirect('/')
-
-
-def billdata(request):
-    sid = request.session['s_id']
-    login = Fin_Login_Details.objects.get(id=sid)
-    
-    if login.User_Type == 'Company':
-        com = Fin_Company_Details.objects.get(Login_Id = sid)
-        itemname = request.GET.get('itemname')
-        billnumber = request.GET.get('billnumber')
-        print(billnumber)
-        
-        itm = Fin_Items.objects.get(name=itemname,Company_id=com.id)
-        print(itm.name+"hh")
-        recbill=Fin_Purchase_Bill.objects.get(bill_number=billnumber,company_id=staf.company_id_id)
-        
-       
-        print(recbill.item.name)
-        data7 = {'email': cust.email,'billing_street':cust.billing_street,'billing_city':cust.billing_city,'billing_state':cust.billing_state,'gst_type':cust.gst_type,'gstin':cust.gstin,'place_of_supply':cust.place_of_supply,'recbill_data': recbill_data,}
-        return JsonResponse(data7)
-
-      
-        
-    elif login.User_Type == 'Staff' :
-        staf = Fin_Staff_Details.objects.get(Login_Id = sid)
-        customer_id = request.GET.get('id')
-        recbill=Fin_Purchase_Bill.objects.filter(vendor=customer_id,company_id=staf.company_id_id)
-
-        recbill_data = [{'id': bill.id, 'bill_number': bill.bill_number} for bill in recbill]
-
-        cust = Fin_Vendors.objects.get(id=customer_id,Company_id=staf.company_id_id)
-        data7 = {'email': cust.email,'billing_street':cust.billing_street,'billing_city':cust.billing_city,'billing_state':cust.billing_state,'gst_type':cust.gst_type,'gstin':cust.gstin,'place_of_supply':cust.place_of_supply,'recbill_data': recbill_data,}
-        return JsonResponse(data7)

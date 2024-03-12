@@ -1542,10 +1542,7 @@
             document.getElementById(id).value = avl_val;
             calc()
         }else{
-            console.log(avl_val)
-            cc=parseInt(avl_val) - parseInt(qty);
-            console.log(int(cc))
-            document.getElementById(`qtyspan${id_val}`).textContent = cc;
+            document.getElementById(`qtyspan${id_val}`).textContent = parseInt(avl_val) - parseInt(qty);
         }
     }
 
